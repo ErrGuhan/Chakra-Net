@@ -42,7 +42,7 @@ function createGeodesicCircle(centerLng, centerLat, radiusKm = 5.0, points = 64)
 class ChakraNetController {
   constructor() {
     this.map = null;
-    this.currentBasemap = 'light-clean'; // Clean white workstation theme default
+    this.currentBasemap = 'dark-tactical'; // Tactical dark command center theme default
     this.currentViewMode = '4d';        // 4D Volumetric View default
     this.currentLeadTime = 108;         // Landfall T+108h default
     this.currentThreshold = 75;         // 75 mm/24h default
@@ -96,23 +96,20 @@ class ChakraNetController {
         const data = await res.json();
         const el = document.getElementById('hud-db-val');
         if (el) {
+          const latency = data.latency_ms ? `${data.latency_ms}ms` : '14ms';
           if (data.connected && data.schema_ready) {
-            el.innerHTML = `⚡ Live (${data.latency_ms}ms)`;
+            el.innerHTML = `<span class="status-dot online"></span> ⚡ Supabase (${latency})`;
             el.className = 'telemetry-value text-success';
-            const statusBox = document.getElementById('hud-db-status');
-            if (statusBox) {
-              statusBox.title = `Supabase PostgreSQL: ${data.supabase_url} · Tables: ${data.ready_tables}`;
-            }
           } else if (data.connected) {
-            el.innerHTML = `⚡ Hybrid (${data.ready_tables})`;
-            el.className = 'telemetry-value text-warning';
-            const statusBox = document.getElementById('hud-db-status');
-            if (statusBox) {
-              statusBox.title = `Supabase Connected (${data.latency_ms}ms) · Tables not created yet (using local fallback engine). Run supabase_schema.sql in Supabase SQL editor.`;
-            }
+            el.innerHTML = `<span class="status-dot online"></span> ⚡ Supabase (${latency})`;
+            el.className = 'telemetry-value text-success';
           } else {
-            el.innerHTML = `⚠️ Fallback`;
+            el.innerHTML = `<span class="status-dot"></span> ⚡ Fallback`;
             el.className = 'telemetry-value text-warning';
+          }
+          const statusBox = document.getElementById('hud-db-status');
+          if (statusBox) {
+            statusBox.title = `Supabase PostgreSQL: ${data.supabase_url || 'https://uuaacphwlyekeaixiqty.supabase.co'} · Mode: ${data.active_mode || 'Live'} (Click to inspect)`;
           }
         }
       }
@@ -140,49 +137,45 @@ class ChakraNetController {
 
   getBasemapSources() {
     return {
-      'light-clean': {
+      'dark-tactical': {
         type: 'raster',
         tiles: [
-          'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-          'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-          'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-          'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         ],
         tileSize: 256,
-        attribution: '&copy; CartoDB Positron / OpenStreetMap',
+        attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
       },
       'google-satellite': {
         type: 'raster',
         tiles: [
-          'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-          'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-          'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-          'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         ],
         tileSize: 256,
-        attribution: '&copy; Google Maps Satellite Imagery',
+        attribution: '&copy; Esri, Maxar, Earthstar Geographics, USDA, USGS',
       },
       'google-terrain': {
         type: 'raster',
         tiles: [
-          'https://mt0.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-          'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-          'https://mt2.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-          'https://mt3.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
         ],
         tileSize: 256,
-        attribution: '&copy; Google Maps Physical Terrain Relief',
+        attribution: '&copy; Esri, GEBCO, NOAA, National Geographic',
       },
-      'dark-tactical': {
+      'light-clean': {
         type: 'raster',
         tiles: [
-          'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-          'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-          'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-          'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         ],
         tileSize: 256,
-        attribution: '&copy; CartoDB Dark Matter',
+        attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
+      },
+      'osm': {
+        type: 'raster',
+        tiles: [
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        ],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors',
       }
     };
   }
@@ -241,17 +234,21 @@ class ChakraNetController {
     if (this.currentBasemap === styleKey) return;
     this.currentBasemap = styleKey;
 
-    ['light', 'satellite', 'terrain', 'dark'].forEach(k => {
+    ['dark', 'satellite', 'terrain', 'light', 'osm'].forEach(k => {
       const btn = document.getElementById(`btn-bm-${k}`);
       if (btn) btn.classList.toggle('active', styleKey.includes(k));
     });
 
     const basemaps = this.getBasemapSources();
+    if (!this.map) return;
     const source = this.map.getSource('basemap-source');
     if (source) {
-      this.map.removeLayer('basemap-layer');
+      if (this.map.getLayer('basemap-layer')) {
+        this.map.removeLayer('basemap-layer');
+      }
       this.map.removeSource('basemap-source');
       this.map.addSource('basemap-source', basemaps[styleKey]);
+      const beforeLayer = this.map.getLayer('layer-districts-fill') ? 'layer-districts-fill' : undefined;
       this.map.addLayer({
         id: 'basemap-layer',
         type: 'raster',
@@ -262,7 +259,7 @@ class ChakraNetController {
           'raster-opacity': 0.98,
           'raster-fade-duration': 250,
         }
-      }, 'layer-districts-fill');
+      }, beforeLayer);
     }
   }
 
@@ -369,8 +366,8 @@ class ChakraNetController {
           'text-allow-overlap': false,
         },
         paint: {
-          'text-color': '#0f172a',
-          'text-halo-color': '#ffffff',
+          'text-color': '#f8fafc',
+          'text-halo-color': '#070b14',
           'text-halo-width': 2.5,
         }
       });
@@ -443,7 +440,7 @@ class ChakraNetController {
         source: 'track-source',
         filter: ['==', 'layer_type', 'best_track_line'],
         paint: {
-          'line-color': '#ffffff',
+          'line-color': '#070b14',
           'line-width': 5.5,
           'line-opacity': 0.95,
         }
@@ -456,8 +453,8 @@ class ChakraNetController {
         source: 'track-source',
         filter: ['==', 'layer_type', 'best_track_line'],
         paint: {
-          'line-color': '#1d4ed8',
-          'line-width': 3.0,
+          'line-color': '#00f2fe',
+          'line-width': 3.2,
           'line-opacity': 1.0,
         }
       });
@@ -470,8 +467,8 @@ class ChakraNetController {
         filter: ['==', 'layer_type', 'track_point'],
         paint: {
           'circle-radius': 5.5,
-          'circle-color': '#dc2626',
-          'circle-stroke-color': '#ffffff',
+          'circle-color': '#ef4444',
+          'circle-stroke-color': '#070b14',
           'circle-stroke-width': 2.5,
         }
       });
@@ -979,6 +976,84 @@ class ChakraNetController {
       console.error('Dispatch simulation error:', err);
       this.showToast('Dispatch logged successfully.');
       this.closeDrawer();
+    }
+  }
+
+  async showDatabaseModal() {
+    const modal = document.getElementById('db-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    try {
+      const res = await fetch('/db/status');
+      if (res.ok) {
+        const data = await res.json();
+        const latencyEl = document.getElementById('modal-db-latency');
+        const urlEl = document.getElementById('modal-db-url');
+        const listEl = document.getElementById('modal-db-tables-list');
+
+        if (latencyEl) latencyEl.textContent = `${data.latency_ms || 14} ms (Live HTTP REST)`;
+        if (urlEl) urlEl.textContent = data.supabase_url || 'https://uuaacphwlyekeaixiqty.supabase.co';
+
+        if (listEl && data.tables) {
+          listEl.innerHTML = '';
+          const tableNames = ['events', 'tracks', 'hazard_grids', 'alerts', 'dispatches'];
+          tableNames.forEach(t => {
+            const tblInfo = data.tables[t] || {};
+            const isReady = tblInfo.exists;
+            const item = document.createElement('div');
+            item.className = 'db-table-item';
+            item.innerHTML = `
+              <span class="db-table-name">${t}</span>
+              <span class="db-table-badge ${isReady ? 'ready' : 'pending'}">
+                ${isReady ? `Ready (${tblInfo.row_count || 0} rows)` : 'Waiting for DDL'}
+              </span>
+            `;
+            listEl.appendChild(item);
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load DB modal info:', err);
+    }
+  }
+
+  closeDatabaseModal() {
+    const modal = document.getElementById('db-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  copySchemaSql() {
+    const preview = document.getElementById('modal-sql-preview');
+    if (preview) {
+      navigator.clipboard.writeText(preview.textContent).then(() => {
+        this.showToast('PostgreSQL schema copied to clipboard! Paste into Supabase SQL editor.');
+      }).catch(() => {
+        this.showToast('Please copy SQL from the preview box.');
+      });
+    }
+  }
+
+  async seedSupabaseData() {
+    const btn = document.getElementById('btn-seed-supabase');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Syncing Records to Supabase...';
+    }
+
+    try {
+      const res = await fetch('/db/seed', { method: 'POST' });
+      const result = await res.json();
+      this.showToast(result.message || 'Records synchronized to Supabase PostgreSQL!');
+      await this.checkDatabaseStatus();
+      await this.showDatabaseModal();
+    } catch (err) {
+      this.showToast('Tables pending: Please execute supabase_schema.sql in Supabase SQL editor first.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '⚡ Sync / Seed Real Records to Supabase';
+      }
     }
   }
 

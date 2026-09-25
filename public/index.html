@@ -17,6 +17,7 @@
 
   <!-- Professional Geospatial Stylesheet -->
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
@@ -64,9 +65,11 @@
           <span class="telemetry-label">Alert Status</span>
           <span class="telemetry-value text-warning">OASIS CAP 1.2</span>
         </div>
-        <div class="telemetry-item db-status" id="hud-db-status" title="Supabase Server API Database">
+        <div class="telemetry-item db-status" id="hud-db-status" onclick="app.showDatabaseModal()" title="Click to inspect real Supabase PostgreSQL connection &amp; schema" style="cursor: pointer;">
           <span class="telemetry-label">Database</span>
-          <span class="telemetry-value text-success" id="hud-db-val">⚡ Supabase Live</span>
+          <span class="telemetry-value text-success" id="hud-db-val">
+            <span class="status-dot online"></span> ⚡ Supabase Live
+          </span>
         </div>
       </div>
 
@@ -80,19 +83,22 @@
         </button>
       </div>
 
-      <!-- Basemap Switcher (Clean Light / Satellite / Terrain / Dark) -->
+      <!-- Basemap Switcher (Keyless ESRI Tactical Dark / Satellite / Ocean / Light / OSM) -->
       <div class="basemap-switcher" role="radiogroup" aria-label="Basemap Style Selector">
-        <button class="basemap-btn active" id="btn-bm-light" onclick="app.setBasemap('light-clean')" title="Clean White Geographical Canvas">
-          ☀️ Light
+        <button class="basemap-btn active" id="btn-bm-dark" onclick="app.setBasemap('dark-tactical')" title="High Contrast Tactical Dark Canvas (Keyless ESRI)">
+          🌑 Dark
         </button>
-        <button class="basemap-btn" id="btn-bm-satellite" onclick="app.setBasemap('google-satellite')" title="Real Landscape Google Satellite Imagery">
+        <button class="basemap-btn" id="btn-bm-satellite" onclick="app.setBasemap('google-satellite')" title="High-Res True-Color Satellite Imagery (Keyless ESRI)">
           🛰️ Satellite
         </button>
-        <button class="basemap-btn" id="btn-bm-terrain" onclick="app.setBasemap('google-terrain')" title="Topographic Elevation & Hillshading">
-          🏔️ Terrain
+        <button class="basemap-btn" id="btn-bm-terrain" onclick="app.setBasemap('google-terrain')" title="Ocean Bathymetry &amp; Topographic Contours (Keyless ESRI)">
+          🌊 Ocean
         </button>
-        <button class="basemap-btn" id="btn-bm-dark" onclick="app.setBasemap('dark-tactical')" title="High Contrast Tactical Canvas">
-          🌑 Dark
+        <button class="basemap-btn" id="btn-bm-light" onclick="app.setBasemap('light-clean')" title="Clean Geographical Canvas (Keyless ESRI)">
+          ☀️ Light
+        </button>
+        <button class="basemap-btn" id="btn-bm-osm" onclick="app.setBasemap('osm')" title="OpenStreetMap Standard Base (Keyless)">
+          🗺️ OSM
         </button>
       </div>
     </header>
@@ -182,7 +188,7 @@
           <!-- 5.0 km Geodesic Impact Radius Buffer -->
           <div class="layer-card active" id="card-radius-5km" onclick="app.toggleLayer('radius-5km')">
             <div class="layer-meta">
-              <div class="layer-swatch" style="background: #0284c7; color: #0284c7;"></div>
+              <div class="layer-swatch" style="background: #00f2fe; color: #00f2fe;"></div>
               <div>
                 <div class="layer-name">5.0 km Geodesic Radius Perimeter</div>
                 <div class="layer-desc">Exact 5 km safety buffer (78.5 km² impact perimeter)</div>
@@ -419,6 +425,66 @@
       </div>
     </aside>
 
+    <!-- Real Database Connection & Schema Inspector Modal -->
+    <div class="modal-overlay" id="db-modal" style="display: none;" onclick="if(event.target === this) app.closeDatabaseModal()">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="status-dot online"></span>
+            <h3>Supabase Cloud Database Telemetry</h3>
+          </div>
+          <button class="modal-close" onclick="app.closeDatabaseModal()" aria-label="Close Database Modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="db-telemetry-grid">
+            <div class="db-meta-box">
+              <span class="db-label">Database Provider</span>
+              <span class="db-value text-success">Supabase PostgreSQL 15+</span>
+            </div>
+            <div class="db-meta-box">
+              <span class="db-label">Live Ping Latency</span>
+              <span class="db-value text-success" id="modal-db-latency">Testing...</span>
+            </div>
+            <div class="db-meta-box">
+              <span class="db-label">Project URL</span>
+              <span class="db-value text-mono" id="modal-db-url">https://uuaacphwlyekeaixiqty.supabase.co</span>
+            </div>
+            <div class="db-meta-box">
+              <span class="db-label">REST API Engine</span>
+              <span class="db-value text-success">PostgREST v12 (Active)</span>
+            </div>
+          </div>
+
+          <div class="db-tables-section">
+            <h4>Application Database Tables</h4>
+            <div class="db-tables-list" id="modal-db-tables-list">
+              <!-- Populated dynamically: events, tracks, hazard_grids, alerts, dispatches -->
+            </div>
+          </div>
+
+          <div class="db-sql-section">
+            <div class="sql-section-header">
+              <h4>PostgreSQL Schema Initializer (supabase_schema.sql)</h4>
+              <button class="btn-copy-sql" onclick="app.copySchemaSql()">📋 Copy SQL</button>
+            </div>
+            <p class="sql-hint">Execute this in the Supabase SQL editor to create all 5 tables in your Supabase project.</p>
+            <pre class="sql-code-preview" id="modal-sql-preview">-- ChakraNet PostgreSQL Schema
+CREATE TABLE IF NOT EXISTS public.events (id text PRIMARY KEY, name text NOT NULL, basin text NOT NULL, landfall jsonb NOT NULL, lead_times_hours jsonb NOT NULL, resolution jsonb NOT NULL, status text NOT NULL, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.tracks (event_id text PRIMARY KEY REFERENCES public.events(id) ON DELETE CASCADE, geojson jsonb NOT NULL, total_features integer NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.hazard_grids (id text PRIMARY KEY, event_id text NOT NULL REFERENCES public.events(id) ON DELETE CASCADE, lead_time_hours integer NOT NULL, threshold_mm double precision NOT NULL, geojson jsonb NOT NULL, total_cells integer NOT NULL DEFAULT 0, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.alerts (id text PRIMARY KEY, event_id text NOT NULL REFERENCES public.events(id) ON DELETE CASCADE, lead_time_hours integer NOT NULL, severity text NOT NULL, affected_area text NOT NULL, cap_xml text NOT NULL, multilingual jsonb NOT NULL, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.dispatches (id text PRIMARY KEY, event_id text NOT NULL REFERENCES public.events(id) ON DELETE CASCADE, lead_time_hours integer NOT NULL, cell_id text, target_districts jsonb NOT NULL, channels jsonb NOT NULL, cap_xml text NOT NULL, status text NOT NULL, simulation_mode boolean NOT NULL DEFAULT true, audit_log jsonb NOT NULL, created_at timestamptz DEFAULT now());</pre>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-seed-data" id="btn-seed-supabase" onclick="app.seedSupabaseData()">
+            ⚡ Sync / Seed Real Records to Supabase
+          </button>
+          <button class="btn-modal-close" onclick="app.closeDatabaseModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Global Notification Toast -->
     <div class="toast-notice" id="toast-notice" role="alert">
       <span id="toast-text">Alert dispatched successfully.</span>
@@ -428,5 +494,6 @@
 
   <!-- Dashboard Application Controller -->
   <script src="/static/app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

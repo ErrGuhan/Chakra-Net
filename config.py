@@ -12,10 +12,18 @@ from typing import List, Tuple
 
 import os
 
+import tempfile
+
 # Base paths
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
-CACHE_DIR = DATA_DIR / "cache"
+
+# On serverless platforms (e.g. Vercel), use /tmp for caching
+if os.environ.get("VERCEL") or not os.access(PROJECT_ROOT, os.W_OK):
+    CACHE_DIR = Path(tempfile.gettempdir()) / "chakranet_cache"
+else:
+    CACHE_DIR = DATA_DIR / "cache"
+
 MODELS_DIR = PROJECT_ROOT / "models"
 SERVING_DIR = PROJECT_ROOT / "serving"
 NOTEBOOKS_DIR = PROJECT_ROOT / "notebooks"
@@ -26,18 +34,24 @@ API_EXAMPLES_DIR = ARTIFACTS_DIR / "api_examples"
 # Auto-load .env file from project root
 _env_path = PROJECT_ROOT / ".env"
 if _env_path.exists():
-    with open(_env_path, "r", encoding="utf-8") as _f:
-        for _line in _f:
-            _line = _line.strip()
-            if _line and not _line.startswith("#") and "=" in _line:
-                _k, _v = _line.split("=", 1)
-                _k, _v = _k.strip(), _v.strip()
-                if _k not in os.environ:
-                    os.environ[_k] = _v
+    try:
+        with open(_env_path, "r", encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip()
+                    if _k not in os.environ:
+                        os.environ[_k] = _v
+    except Exception:
+        pass
 
-# Ensure directories exist
-for p in [DATA_DIR, CACHE_DIR, MODELS_DIR, SERVING_DIR, NOTEBOOKS_DIR, TESTS_DIR, ARTIFACTS_DIR, API_EXAMPLES_DIR]:
-    p.mkdir(parents=True, exist_ok=True)
+# Ensure directories exist safely without throwing on read-only environments
+for p in [CACHE_DIR, DATA_DIR, MODELS_DIR, SERVING_DIR, NOTEBOOKS_DIR, TESTS_DIR, ARTIFACTS_DIR, API_EXAMPLES_DIR]:
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        pass
 
 
 @dataclass(frozen=True)

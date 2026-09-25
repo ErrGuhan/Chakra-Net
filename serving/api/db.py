@@ -298,18 +298,33 @@ class DataService:
         prob_coarse = np.mean(exceed_mask, axis=0)
         mean_coarse = np.mean(tp, axis=0)
 
-        # Interpolate onto high-resolution 5 km target grid
-        try:
-            from scipy.interpolate import RegularGridInterpolator
-            interp_p = RegularGridInterpolator((lats, lons), prob_coarse, method="linear", bounds_error=False, fill_value=0.0)
-            interp_m = RegularGridInterpolator((lats, lons), mean_coarse, method="linear", bounds_error=False, fill_value=0.0)
-            grid_lats, grid_lons = np.meshgrid(lat_5km + dlat_5km / 2.0, lon_5km + dlon_5km / 2.0, indexing="ij")
-            pts = np.stack([grid_lats.ravel(), grid_lons.ravel()], axis=-1)
-            p_fine = interp_p(pts).reshape(grid_lats.shape)
-            m_fine = interp_m(pts).reshape(grid_lats.shape)
-        except Exception:
-            p_fine = np.zeros((len(lat_5km), len(lon_5km)), dtype=np.float32)
-            m_fine = np.zeros((len(lat_5km), len(lon_5km)), dtype=np.float32)
+        # Interpolate onto high-resolution 5 km target grid using pure NumPy
+        t_lats = lat_5km + dlat_5km / 2.0
+        t_lons = lon_5km + dlon_5km / 2.0
+        
+        i = np.clip(np.searchsorted(lats, t_lats) - 1, 0, len(lats) - 2)
+        j = np.clip(np.searchsorted(lons, t_lons) - 1, 0, len(lons) - 2)
+        
+        lat0 = lats[i][:, None]
+        lat1 = lats[i + 1][:, None]
+        lon0 = lons[j][None, :]
+        lon1 = lons[j + 1][None, :]
+        
+        t_lat = np.clip((t_lats[:, None] - lat0) / (lat1 - lat0 + 1e-9), 0.0, 1.0)
+        t_lon = np.clip((t_lons[None, :] - lon0) / (lon1 - lon0 + 1e-9), 0.0, 1.0)
+        
+        # Bilinear interpolation for probability and mean rain fields
+        vp00 = prob_coarse[np.ix_(i, j)]
+        vp10 = prob_coarse[np.ix_(i + 1, j)]
+        vp01 = prob_coarse[np.ix_(i, j + 1)]
+        vp11 = prob_coarse[np.ix_(i + 1, j + 1)]
+        p_fine = (1.0 - t_lat) * (1.0 - t_lon) * vp00 + t_lat * (1.0 - t_lon) * vp10 + (1.0 - t_lat) * t_lon * vp01 + t_lat * t_lon * vp11
+
+        vm00 = mean_coarse[np.ix_(i, j)]
+        vm10 = mean_coarse[np.ix_(i + 1, j)]
+        vm01 = mean_coarse[np.ix_(i, j + 1)]
+        vm11 = mean_coarse[np.ix_(i + 1, j + 1)]
+        m_fine = (1.0 - t_lat) * (1.0 - t_lon) * vm00 + t_lat * (1.0 - t_lon) * vm10 + (1.0 - t_lat) * t_lon * vm01 + t_lat * t_lon * vm11
 
         features = []
         for i in range(len(lat_5km)):
