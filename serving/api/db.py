@@ -387,7 +387,7 @@ class DataService:
                     }
                 })
 
-        return {
+        fc = {
             "type": "FeatureCollection",
             "properties": {
                 "event_id": event_id,

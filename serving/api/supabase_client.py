@@ -191,6 +191,9 @@ class SupabaseClient:
             )
             if res.status_code in (200, 201):
                 return True
+            if res.status_code == 404 and "PGRST205" in res.text:
+                logger.debug(f"Supabase table '{table}' not yet created in schema cache (PGRST205).")
+                return False
             logger.warning(f"Supabase upsert failed on '{table}' [{res.status_code}]: {res.text[:200]}")
             return False
         except Exception as exc:
@@ -215,6 +218,9 @@ class SupabaseClient:
             )
             if res.status_code in (200, 201):
                 return True
+            if res.status_code == 404 and "PGRST205" in res.text:
+                logger.debug(f"Supabase table '{table}' not yet created in schema cache (PGRST205).")
+                return False
             logger.warning(f"Supabase insert failed on '{table}' [{res.status_code}]: {res.text[:200]}")
             return False
         except Exception as exc:
