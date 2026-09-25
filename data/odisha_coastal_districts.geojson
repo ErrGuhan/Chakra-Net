@@ -1,0 +1,146 @@
+{
+  "type": "FeatureCollection",
+  "name": "Odisha_Coastal_Districts_ChakraNet",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Ganjam",
+        "state": "Odisha",
+        "role": "Cyclone Phailin Landfall Epicenter",
+        "headquarters": "Chhatrapur / Berhampur",
+        "landfall_point": "Gopalpur (19.26°N, 84.91°E)",
+        "population_exposed": 3529031,
+        "historical_peak_rain_mm": 380.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [84.45, 19.00], [84.65, 19.12], [84.88, 19.22], [85.08, 19.38],
+            [85.20, 19.60], [85.12, 19.82], [84.85, 20.05], [84.50, 20.15],
+            [84.20, 19.95], [84.05, 19.70], [84.18, 19.35], [84.45, 19.00]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Puri",
+        "state": "Odisha",
+        "role": "High Impact Coastal & Chilika Lagoon Surge Zone",
+        "headquarters": "Puri",
+        "population_exposed": 1698730,
+        "historical_peak_rain_mm": 290.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.15, 19.65], [85.45, 19.72], [85.80, 19.80], [86.10, 19.90],
+            [86.25, 20.05], [86.05, 20.18], [85.70, 20.12], [85.35, 19.95],
+            [85.15, 19.65]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Jagatsinghpur",
+        "state": "Odisha",
+        "role": "Paradeep Deep Sea Port & Mahanadi Estuary",
+        "headquarters": "Jagatsinghpur",
+        "population_exposed": 1136971,
+        "historical_peak_rain_mm": 260.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [86.10, 19.92], [86.40, 20.08], [86.70, 20.25], [86.68, 20.40],
+            [86.35, 20.35], [86.15, 20.15], [86.10, 19.92]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Khordha",
+        "state": "Odisha",
+        "role": "State Capital Urban & River Basin Drainage",
+        "headquarters": "Bhubaneswar",
+        "population_exposed": 2251673,
+        "historical_peak_rain_mm": 210.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.15, 19.90], [85.55, 20.05], [85.90, 20.20], [85.85, 20.45],
+            [85.45, 20.40], [85.10, 20.20], [85.15, 19.90]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Kendrapara",
+        "state": "Odisha",
+        "role": "Bhitarkanika Mangrove & Tidal Delta",
+        "headquarters": "Kendrapara",
+        "population_exposed": 1440361,
+        "historical_peak_rain_mm": 220.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [86.35, 20.35], [86.75, 20.45], [87.05, 20.70], [86.85, 20.85],
+            [86.40, 20.70], [86.25, 20.50], [86.35, 20.35]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "district": "Srikakulam",
+        "state": "Andhra Pradesh",
+        "role": "Southern Flank Gale Wind & High Wave Impact",
+        "headquarters": "Srikakulam",
+        "population_exposed": 2703114,
+        "historical_peak_rain_mm": 240.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [83.80, 18.25], [84.15, 18.55], [84.45, 18.85], [84.60, 19.08],
+            [84.35, 19.18], [84.00, 18.90], [83.65, 18.60], [83.80, 18.25]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Chilika Lake Lagoon",
+        "category": "Protected Ramsar Wetland & Estuarine Lagoon",
+        "ecological_status": "Asia's Largest Brackish Water Lagoon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.10, 19.50], [85.35, 19.62], [85.55, 19.75], [85.45, 19.82],
+            [85.25, 19.72], [85.15, 19.55], [85.10, 19.50]
+          ]
+        ]
+      }
+    }
+  ]
+}

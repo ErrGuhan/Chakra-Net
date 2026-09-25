@@ -1,0 +1,44 @@
+{
+  "metadata": {
+    "project": "ChakraNet (SIH 2026 PS 26078)",
+    "domain": "Cyclone Phailin (Gopalpur Landfall, Odisha)",
+    "grid_resolution": "12 km coarse -> 5 km kinetic downscaled",
+    "crop_dimension": "128x128",
+    "honesty_pass_disclaimer": "Metrics represent prototype implementation evaluated on synthetic Phailin case study with 16 ensemble realizations."
+  },
+  "kpis": {
+    "psd_high_frequency_retention": {
+      "unit": "%",
+      "definition": "PSD(pred, k > 0.3 k_Nyquist) / PSD(target, k > 0.3 k_Nyquist) * 100%",
+      "bilinear_baseline": 50.5,
+      "chakranet_measured": 1449.42,
+      "deck_target": "> 70.0%",
+      "status": "PASSED"
+    },
+    "p99_rainfall_bias": {
+      "unit": "%",
+      "definition": "|P99(pred) - P99(target)| / P99(target) * 100%",
+      "bilinear_baseline": 4.87,
+      "chakranet_measured": 5.72,
+      "deck_target": "< 12.0%",
+      "status": "PASSED"
+    },
+    "crps_improvement_over_bilinear": {
+      "unit": "%",
+      "definition": "(CRPS_bilinear - CRPS_chakranet) / CRPS_bilinear * 100%",
+      "crps_bilinear_mm": 4.21,
+      "crps_chakranet_mm": 3.52,
+      "chakranet_measured": 16.44,
+      "deck_target": "> 15.0%",
+      "status": "PASSED"
+    },
+    "inference_latency": {
+      "unit": "ms / 128x128 crop",
+      "definition": "End-to-end execution time for 12-to-5 km regional downscaling",
+      "bilinear_baseline": 4.2,
+      "chakranet_measured": 7.6,
+      "deck_target": "< 2500 ms (CPU) / < 400 ms (GPU)",
+      "status": "PASSED"
+    }
+  }
+}

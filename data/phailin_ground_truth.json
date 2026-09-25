@@ -1,0 +1,116 @@
+{
+  "event_id": "phailin_2013",
+  "name": "Very Severe Cyclonic Storm Phailin",
+  "source": "India Meteorological Department (IMD) & JTWC Best Track Archive",
+  "landfall": {
+    "location": "Near Gopalpur, Ganjam district, Odisha",
+    "coordinates": [19.26, 84.91],
+    "time_utc": "2013-10-12T15:30:00Z",
+    "time_ist": "2013-10-12T21:00:00+05:30",
+    "central_pressure_hpa": 940,
+    "max_sustained_wind_kt": 115,
+    "max_sustained_wind_kmh": 215,
+    "category_imd": "Extremely Severe Cyclonic Storm (ESCS)"
+  },
+  "best_track": [
+    {
+      "time_utc": "2013-10-08T00:00:00Z",
+      "lead_time_hours": 0,
+      "lat": 10.5,
+      "lon": 94.8,
+      "central_pressure_hpa": 1002,
+      "wind_speed_kt": 25,
+      "status": "Depression"
+    },
+    {
+      "time_utc": "2013-10-08T12:00:00Z",
+      "lead_time_hours": 12,
+      "lat": 11.2,
+      "lon": 93.5,
+      "central_pressure_hpa": 998,
+      "wind_speed_kt": 30,
+      "status": "Deep Depression"
+    },
+    {
+      "time_utc": "2013-10-09T00:00:00Z",
+      "lead_time_hours": 24,
+      "lat": 12.0,
+      "lon": 92.5,
+      "central_pressure_hpa": 994,
+      "wind_speed_kt": 35,
+      "status": "Cyclonic Storm (Phailin)"
+    },
+    {
+      "time_utc": "2013-10-09T12:00:00Z",
+      "lead_time_hours": 36,
+      "lat": 13.1,
+      "lon": 91.0,
+      "central_pressure_hpa": 988,
+      "wind_speed_kt": 45,
+      "status": "Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-10T00:00:00Z",
+      "lead_time_hours": 48,
+      "lat": 14.2,
+      "lon": 89.5,
+      "central_pressure_hpa": 978,
+      "wind_speed_kt": 65,
+      "status": "Very Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-10T12:00:00Z",
+      "lead_time_hours": 60,
+      "lat": 15.3,
+      "lon": 88.3,
+      "central_pressure_hpa": 960,
+      "wind_speed_kt": 85,
+      "status": "Very Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-11T00:00:00Z",
+      "lead_time_hours": 72,
+      "lat": 16.1,
+      "lon": 87.2,
+      "central_pressure_hpa": 940,
+      "wind_speed_kt": 115,
+      "status": "Extremely Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-11T12:00:00Z",
+      "lead_time_hours": 84,
+      "lat": 17.0,
+      "lon": 86.4,
+      "central_pressure_hpa": 935,
+      "wind_speed_kt": 125,
+      "status": "Extremely Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-12T00:00:00Z",
+      "lead_time_hours": 96,
+      "lat": 18.0,
+      "lon": 85.6,
+      "central_pressure_hpa": 935,
+      "wind_speed_kt": 120,
+      "status": "Extremely Severe Cyclonic Storm"
+    },
+    {
+      "time_utc": "2013-10-12T12:00:00Z",
+      "lead_time_hours": 108,
+      "lat": 18.9,
+      "lon": 85.1,
+      "central_pressure_hpa": 940,
+      "wind_speed_kt": 115,
+      "status": "Extremely Severe Cyclonic Storm (Near Landfall)"
+    },
+    {
+      "time_utc": "2013-10-13T00:00:00Z",
+      "lead_time_hours": 120,
+      "lat": 19.8,
+      "lon": 84.4,
+      "central_pressure_hpa": 970,
+      "wind_speed_kt": 65,
+      "status": "Severe Cyclonic Storm (Inland Odisha)"
+    }
+  ]
+}

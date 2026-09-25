@@ -1,0 +1,411 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            94.8,
+            10.5
+          ],
+          [
+            93.5,
+            11.2
+          ],
+          [
+            92.5,
+            12.0
+          ],
+          [
+            91.0,
+            13.1
+          ],
+          [
+            89.5,
+            14.2
+          ],
+          [
+            88.3,
+            15.3
+          ],
+          [
+            87.2,
+            16.1
+          ],
+          [
+            86.4,
+            17.0
+          ],
+          [
+            85.6,
+            18.0
+          ],
+          [
+            85.1,
+            18.9
+          ],
+          [
+            84.4,
+            19.8
+          ]
+        ]
+      },
+      "properties": {
+        "layer_type": "best_track_line",
+        "name": "Cyclone Phailin Trajectory",
+        "stroke": "#ffffff",
+        "stroke-width": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          94.8,
+          10.5
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 0,
+        "time_utc": "2013-10-08T00:00:00Z",
+        "wind_speed_kt": 25,
+        "central_pressure_hpa": 1002,
+        "status": "Depression"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.5,
+          11.2
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 12,
+        "time_utc": "2013-10-08T12:00:00Z",
+        "wind_speed_kt": 30,
+        "central_pressure_hpa": 998,
+        "status": "Deep Depression"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.5,
+          12.0
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 24,
+        "time_utc": "2013-10-09T00:00:00Z",
+        "wind_speed_kt": 35,
+        "central_pressure_hpa": 994,
+        "status": "Cyclonic Storm (Phailin)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.0,
+          13.1
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 36,
+        "time_utc": "2013-10-09T12:00:00Z",
+        "wind_speed_kt": 45,
+        "central_pressure_hpa": 988,
+        "status": "Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          89.5,
+          14.2
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 48,
+        "time_utc": "2013-10-10T00:00:00Z",
+        "wind_speed_kt": 65,
+        "central_pressure_hpa": 978,
+        "status": "Very Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3,
+          15.3
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 60,
+        "time_utc": "2013-10-10T12:00:00Z",
+        "wind_speed_kt": 85,
+        "central_pressure_hpa": 960,
+        "status": "Very Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          87.2,
+          16.1
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 72,
+        "time_utc": "2013-10-11T00:00:00Z",
+        "wind_speed_kt": 115,
+        "central_pressure_hpa": 940,
+        "status": "Extremely Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          86.4,
+          17.0
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 84,
+        "time_utc": "2013-10-11T12:00:00Z",
+        "wind_speed_kt": 125,
+        "central_pressure_hpa": 935,
+        "status": "Extremely Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          85.6,
+          18.0
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 96,
+        "time_utc": "2013-10-12T00:00:00Z",
+        "wind_speed_kt": 120,
+        "central_pressure_hpa": 935,
+        "status": "Extremely Severe Cyclonic Storm"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          85.1,
+          18.9
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 108,
+        "time_utc": "2013-10-12T12:00:00Z",
+        "wind_speed_kt": 115,
+        "central_pressure_hpa": 940,
+        "status": "Extremely Severe Cyclonic Storm (Near Landfall)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          84.4,
+          19.8
+        ]
+      },
+      "properties": {
+        "layer_type": "track_point",
+        "lead_time_hours": 120,
+        "time_utc": "2013-10-13T00:00:00Z",
+        "wind_speed_kt": 65,
+        "central_pressure_hpa": 970,
+        "status": "Severe Cyclonic Storm (Inland Odisha)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              94.625,
+              10.675
+            ],
+            [
+              93.255,
+              11.444999999999999
+            ],
+            [
+              92.185,
+              12.315
+            ],
+            [
+              90.615,
+              13.485
+            ],
+            [
+              89.045,
+              14.655
+            ],
+            [
+              87.77499999999999,
+              15.825000000000001
+            ],
+            [
+              86.605,
+              16.695
+            ],
+            [
+              85.735,
+              17.665
+            ],
+            [
+              84.865,
+              18.735
+            ],
+            [
+              84.29499999999999,
+              19.705
+            ],
+            [
+              83.525,
+              20.675
+            ],
+            [
+              85.275,
+              18.925
+            ],
+            [
+              85.905,
+              18.095
+            ],
+            [
+              86.335,
+              17.265
+            ],
+            [
+              87.06500000000001,
+              16.335
+            ],
+            [
+              87.795,
+              15.505
+            ],
+            [
+              88.825,
+              14.775
+            ],
+            [
+              89.955,
+              13.745
+            ],
+            [
+              91.385,
+              12.715
+            ],
+            [
+              92.815,
+              11.685
+            ],
+            [
+              93.745,
+              10.955
+            ],
+            [
+              94.975,
+              10.325
+            ],
+            [
+              94.625,
+              10.675
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "layer_type": "uncertainty_cone",
+        "name": "70% Ensemble Uncertainty Cone",
+        "fill": "#38bdf8",
+        "fill-opacity": 0.22,
+        "stroke": "#0284c7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              83.3,
+              17.099999999999998
+            ],
+            [
+              86.89999999999999,
+              17.099999999999998
+            ],
+            [
+              86.89999999999999,
+              20.7
+            ],
+            [
+              83.3,
+              20.7
+            ],
+            [
+              83.3,
+              17.099999999999998
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "layer_type": "stage1_crop_box",
+        "name": "Stage 1 Downscaler Crop Bounding Box (750x750 km)",
+        "lead_time_hours": 108,
+        "stroke": "#f59e0b",
+        "stroke-width": 2,
+        "stroke-dasharray": [
+          4,
+          4
+        ]
+      }
+    }
+  ]
+}

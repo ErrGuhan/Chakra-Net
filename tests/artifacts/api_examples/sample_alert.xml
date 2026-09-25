@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>CHAKRANET-42989941E0B9</identifier>
+  <sender>in.gov.moes.ncmrwf.chakranet</sender>
+  <sent>2026-09-25T06:29:03+00:00</sent>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <language>en-US</language>
+    <category>Met</category>
+    <event>Very Severe Cyclonic Storm Phailin</event>
+    <urgency>Immediate</urgency>
+    <severity>Extreme</severity>
+    <certainty>Likely</certainty>
+    <eventCode>
+      <valueName>ChakraNetAlertCode</valueName>
+      <value>CHAKRA-MET-EXTREME</value>
+    </eventCode>
+    <headline>ChakraNet Warning: Extreme Cyclone Hazard (Very Severe Cyclonic Storm Phailin) at T+108h</headline>
+    <description>Severe extreme-weather anomaly tracked by ChakraNet atmospheric forecasting pipeline. Anticipated high-impact heavy precipitation and gale-force wind gust risk over Ganjam, Puri, and Jagatsinghpur coastal districts (Odisha) near Gopalpur, Ganjam district, Odisha at lead time +108 hours. Classified at severity level 'Extreme'.</description>
+    <instruction>Take immediate precautionary shelter. Avoid low-lying coastal terrain and sea voyages. Follow official advisories broadcasted by IMD, NDMA, and State Disaster Management Authorities.</instruction>
+    <contact>NCMRWF Emergency Operational Cell (support@ncmrwf.gov.in)</contact>
+    <area>
+      <areaDesc>Ganjam, Puri, and Jagatsinghpur coastal districts (Odisha) near Gopalpur, Ganjam district, Odisha</areaDesc>
+      <polygon>18.4600,84.1100 20.0600,84.1100 20.0600,85.7100 18.4600,85.7100 18.4600,84.1100</polygon>
+    </area>
+  </info>
+</alert>

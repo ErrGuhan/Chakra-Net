@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chakranet"
+version = "0.1.0"
+description = "Dual-stage atmospheric physics pipeline for extreme weather anomaly tracking and diffusion downscaling"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "ChakraNet Team - SIH 2026 PS 26078" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Atmospheric Science"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["data*", "models*", "serving*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning"
+]

@@ -1,0 +1,22 @@
+{
+  "status": "SIMULATED_TRANSMISSION_SUCCESS",
+  "dispatch_id": "SIM-SACHET-PHAILIN-SAMPLE",
+  "timestamp_utc": "2026-09-24T22:05:00Z",
+  "channels_triggered": [
+    "SACHET_SMS",
+    "BHASHINI_VOICE",
+    "CAP_BROADCAST"
+  ],
+  "sachet_status": "MOCKED: Payload logged to simulated NDMA SACHET gateway",
+  "bhashini_status": "MOCKED: Hindi audio text synthesized via templated Bhashini interface",
+  "disclaimer": "SIMULATED \u2014 Not connected to live SACHET or Bhashini production endpoints.",
+  "audit_log": {
+    "event_id": "phailin_2013",
+    "target_districts": [
+      "Ganjam",
+      "Puri",
+      "Khurda"
+    ],
+    "mode": "PROTOTYPE_DEMO"
+  }
+}

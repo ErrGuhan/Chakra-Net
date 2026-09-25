@@ -1,0 +1,74 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Data and large weight caches
+data/cache/
+*.zarr/
+*.nc
+*.grib
+*.grib2
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# SQLite database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node & Playwright
+node_modules/
+.playwright-cli/
+package-lock.json
+
+# Test caches
+.pytest_cache/
+
+# Keep tests/artifacts/ directory structure intact
+!tests/artifacts/
+!tests/artifacts/.gitkeep
+

@@ -1,0 +1,669 @@
+[
+  {
+    "tag": "DIV",
+    "id": "map-view",
+    "className": "maplibregl-map",
+    "attribute": "aria-label",
+    "text": "Geospatial Map Viewport"
+  },
+  {
+    "tag": "CANVAS",
+    "id": "",
+    "className": "maplibregl-canvas",
+    "attribute": "aria-label",
+    "text": "Map"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "storm-eye-marker maplibregl-marker maplibregl-marker-anchor-center",
+    "attribute": "title",
+    "text": "Current Storm Eye Position"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-zoom-in",
+    "attribute": "title",
+    "text": "Zoom in"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-zoom-in",
+    "attribute": "aria-label",
+    "text": "Zoom in"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-zoom-out",
+    "attribute": "title",
+    "text": "Zoom out"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-zoom-out",
+    "attribute": "aria-label",
+    "text": "Zoom out"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-compass",
+    "attribute": "title",
+    "text": "Reset bearing to north"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "maplibregl-ctrl-compass",
+    "attribute": "aria-label",
+    "text": "Reset bearing to north"
+  },
+  {
+    "tag": "SUMMARY",
+    "id": "",
+    "className": "maplibregl-ctrl-attrib-button",
+    "attribute": "title",
+    "text": "Toggle attribution"
+  },
+  {
+    "tag": "SUMMARY",
+    "id": "",
+    "className": "maplibregl-ctrl-attrib-button",
+    "attribute": "aria-label",
+    "text": "Toggle attribution"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "maplibregl-ctrl-attrib-inner",
+    "text": "© Google Maps Satellite Imagery"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "brand-symbol",
+    "attribute": "title",
+    "text": "ChakraNet Emblem"
+  },
+  {
+    "tag": "H1",
+    "id": "",
+    "className": "",
+    "text": "ChakraNet Operational Command"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "NCMRWF / MoES · SIH 2026 PS 26078"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "● Two-Stage AI Hybrid Pipeline"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-label",
+    "text": "Storm Intensity"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-value",
+    "text": "ESCS (Cat 5 Eq)"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-label",
+    "text": "Central Pressure"
+  },
+  {
+    "tag": "SPAN",
+    "id": "hud-pressure",
+    "className": "telemetry-value",
+    "text": "940 hPa"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-label",
+    "text": "Peak Sustained Wind"
+  },
+  {
+    "tag": "SPAN",
+    "id": "hud-wind",
+    "className": "telemetry-value",
+    "text": "215 km/h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-label",
+    "text": "Exceedance Alert"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "telemetry-value",
+    "text": "OASIS CAP 1.2"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "basemap-switcher",
+    "attribute": "aria-label",
+    "text": "Basemap Style Selector"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-satellite",
+    "className": "basemap-btn active",
+    "attribute": "title",
+    "text": "Real Landscape Google Satellite Imagery"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-satellite",
+    "className": "basemap-btn active",
+    "text": "🛰️ Google Satellite"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-terrain",
+    "className": "basemap-btn",
+    "attribute": "title",
+    "text": "Topographic Elevation & Hillshading"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-terrain",
+    "className": "basemap-btn",
+    "text": "🏔️ Terrain / Relief"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-dark",
+    "className": "basemap-btn",
+    "attribute": "title",
+    "text": "High Contrast Tactical Canvas"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-bm-dark",
+    "className": "basemap-btn",
+    "text": "🌑 Tactical Dark"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "Active NWP Case Study"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "VERIFIED IMD ARCHIVE"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "event-title",
+    "text": "Cyclone Phailin (October 2013)"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "event-sub",
+    "text": "Tracked across Bay of Bengal to landfall at Gopalpur, Ganjam district, Odisha. Super-resolved via 5 km residual diffusion downscaling."
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Input Ensemble"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-val",
+    "text": "12 km (23 M)"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Downscaled Grid"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-val",
+    "text": "~5 km Target"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Resolution Gain"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-val",
+    "text": "5.8× Finer"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Inference Time"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-val",
+    "text": "< 10 min"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "attribute": "title",
+    "text": "Focus on Gopalpur Landfall Zone"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "text": "📍 Landfall"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "attribute": "title",
+    "text": "Center on Current Storm Eye"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "text": "🌀 Storm Eye"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "attribute": "title",
+    "text": "View Entire Bay of Bengal Basin"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "cam-btn",
+    "text": "🗺️ Overview"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "Forecast Pipeline Layers"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-name",
+    "text": "Stage 1: GNN Anomaly Cone"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-desc",
+    "text": "90% cross-member dispersion cone & 4D crop box"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-name",
+    "text": "Stage 2: 5 km Hazard Grid"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-desc",
+    "text": "Continuous exceedance probability P(Rain > τ)"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-name",
+    "text": "Coastal District Boundaries"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-desc",
+    "text": "Real Odisha & Andhra Pradesh administrative zones"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-name",
+    "text": "Stage 0: 12 km Coarse Mean"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "layer-desc",
+    "text": "Uncalibrated raw NWP precipitation contours"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "Hazard Rain Threshold (τ)"
+  },
+  {
+    "tag": "SPAN",
+    "id": "label-threshold",
+    "className": "",
+    "text": "75 mm"
+  },
+  {
+    "tag": "INPUT",
+    "id": "range-threshold",
+    "className": "range-input",
+    "attribute": "aria-label",
+    "text": "Hazard Rainfall Exceedance Threshold"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "35mm (Advisory)"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "75mm (Warning)"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "150mm (Extreme)"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "legend-head",
+    "text": "P(Rain > τ) Exceedance Risk"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "0%"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "25%"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "50%"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "75%"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "100%"
+  },
+  {
+    "tag": "SPAN",
+    "id": "badge-lead-time",
+    "className": "lead-time-pill",
+    "text": "T+108h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "label-lead-time-date",
+    "className": "lead-time-sub",
+    "text": "Oct 12, 2013 12:00 UTC · Landfall at Gopalpur, Odisha"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-play-pause",
+    "className": "dock-btn",
+    "attribute": "title",
+    "text": "Play / Pause Forecast Timeline"
+  },
+  {
+    "tag": "SPAN",
+    "id": "btn-speed",
+    "className": "speed-badge",
+    "attribute": "title",
+    "text": "Cycle playback speed"
+  },
+  {
+    "tag": "SPAN",
+    "id": "btn-speed",
+    "className": "speed-badge",
+    "text": "1x Speed"
+  },
+  {
+    "tag": "INPUT",
+    "id": "slider-timeline",
+    "className": "range-input",
+    "attribute": "aria-label",
+    "text": "Forecast Lead Time Scrubber"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+0h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+24h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+48h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+72h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+96h"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "",
+    "text": "T+120h"
+  },
+  {
+    "tag": "ASIDE",
+    "id": "drilldown-drawer",
+    "className": "drilldown-drawer",
+    "attribute": "aria-label",
+    "text": "Cell Detail and CAP Alert Drawer"
+  },
+  {
+    "tag": "H2",
+    "id": "drawer-cell-name",
+    "className": "",
+    "text": "Odisha Coastal 5km Cell"
+  },
+  {
+    "tag": "P",
+    "id": "drawer-coords",
+    "className": "",
+    "text": "19.26°N, 84.91°E · Ganjam District"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "drawer-close",
+    "attribute": "aria-label",
+    "text": "Close Inspection Drawer"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "",
+    "className": "drawer-close",
+    "text": "×"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Severity Level"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "severity-tag tag-extreme",
+    "text": "Extreme"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Exceedance Prob"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-prob-val",
+    "className": "stat-val",
+    "text": "92%"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "Mean Precipitation"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-rain-val",
+    "className": "stat-val",
+    "text": "185 mm/24h"
+  },
+  {
+    "tag": "DIV",
+    "id": "",
+    "className": "stat-key",
+    "text": "P99 Tail Bias"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-p99-val",
+    "className": "stat-val",
+    "text": "+4.2 mm"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "tab-en",
+    "className": "drawer-tab active",
+    "text": "English Advisory"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "tab-hi",
+    "className": "drawer-tab",
+    "text": "Hindi (SIMULATED Bhashini)"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "tab-xml",
+    "className": "drawer-tab",
+    "text": "OASIS CAP 1.2 XML"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-headline-en",
+    "className": "alert-msg-headline",
+    "text": "ChakraNet Warning: Extreme Cyclone Hazard at T+108h"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-desc-en",
+    "className": "alert-msg-desc",
+    "text": "High-confidence destructive storm surge, gale winds (>200 km/h), and extreme rainfall (>150mm) anticipated near Gopalpur coast."
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-instruction-en",
+    "className": "alert-msg-instruction",
+    "text": "Action: Move to designated cyclone multi-purpose shelters immediately. Avoid coastal embankments. Comply with NDMA / OSDMA directives."
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-headline-hi",
+    "className": "alert-msg-headline",
+    "text": "चक्रवात चेतावनी: अत्यधिक गंभीर मौसम खतरा (Cyclone Phailin)"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-desc-hi",
+    "className": "alert-msg-desc",
+    "text": "चक्रवातनेट (ChakraNet) एआई पाइपलाइन द्वारा गोपालपुर, गंजम जिला (ओडिशा) में मूसलाधार वर्षा और तेज चक्रवाती हवाओं की चेतावनी।"
+  },
+  {
+    "tag": "DIV",
+    "id": "drawer-instruction-hi",
+    "className": "alert-msg-instruction",
+    "text": "निर्देश: तुरंत पक्के चक्रवात आश्रय स्थलों में जाएं। समुद्र तट और निचले इलाकों से दूर रहें। राज्य आपदा प्रबंधन प्राधिकरण के निर्देशों का पालन करें।"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "btn-dispatch-alert",
+    "className": "btn-dispatch-action",
+    "text": "Dispatch Simulated CAP Alert (SACHET)"
+  },
+  {
+    "tag": "SPAN",
+    "id": "",
+    "className": "sim-disclaimer",
+    "text": "⚠️ SIMULATED TRANSPORT — Not connected to live MoES/NDMA production endpoints."
+  },
+  {
+    "tag": "SPAN",
+    "id": "toast-text",
+    "className": "",
+    "text": "Alert dispatched successfully."
+  }
+]
