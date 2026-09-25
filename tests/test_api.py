@@ -18,6 +18,14 @@ def test_root_serves_html(client):
     assert "MapLibre" in res.text or "map-view" in res.text
 
 
+def test_health_endpoint(client):
+    """Checks that GET /health returns operational status."""
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert res.json()["status"] == "ok"
+    assert "ChakraNet" in res.json()["service"]
+
+
 def test_list_events(client):
     """Validates GET /events returns Cyclone Phailin metadata."""
     res = client.get("/events")

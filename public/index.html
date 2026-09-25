@@ -2,9 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChakraNet — Extreme Weather Tracker & 5 km Diffusion Downscaler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ChakraNet &#x2014; Extreme Weather Tracker &amp; 5 km Diffusion Downscaler</title>
   <meta name="description" content="ChakraNet: Operational dual-stage atmospheric physics pipeline tracking extreme weather anomalies on an M9 icosahedral mesh and downscaling to 5 km probabilistic hazard maps with CAP 1.2 alerts.">
+
+  <!-- SECURITY META HEADERS -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://tile.openstreetmap.org https://*.supabase.co; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net https://server.arcgisonline.com https://tile.openstreetmap.org; worker-src blob:; child-src blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), midi=()">
+  <meta name="theme-color" content="#070b14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChakraNet">
 
   <!-- Google Fonts: Inter, Outfit, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,12 +22,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- MapLibre GL JS -->
-  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
-  <!-- Professional Geospatial Stylesheet -->
+  <!-- ChakraNet Stylesheet -->
   <link rel="stylesheet" href="/static/styles.css">
-  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
@@ -485,15 +494,14 @@ CREATE TABLE IF NOT EXISTS public.dispatches (id text PRIMARY KEY, event_id text
       </div>
     </div>
 
-    <!-- Global Notification Toast -->
-    <div class="toast-notice" id="toast-notice" role="alert">
+    <!-- Global Notification Toast (ARIA live region for accessibility) -->
+    <div class="toast-notice" id="toast-notice" role="alert" aria-live="assertive" aria-atomic="true">
       <span id="toast-text">Alert dispatched successfully.</span>
     </div>
 
   </div>
 
-  <!-- Dashboard Application Controller -->
-  <script src="/static/app.js"></script>
-  <script src="/app.js"></script>
+  <!-- Dashboard Application Controller (single canonical path) -->
+  <script src="/static/app.js" defer></script>
 </body>
 </html>

@@ -2,6 +2,8 @@
    ChakraNet Operational Command Center — Cyber-Meteorological Design System
    Tactical Dark Palette · High-Contrast Scientific Data Grading · Glassmorphism
    WCAG 2.1 AA Compliant · Standard Meteorological Color Coding (IMD / WMO)
+   Responsive: Mobile (320px+) · Tablet (768px+) · Laptop (1024px+) · Desktop (1440px+)
+   Security: CSP-ready · No inline style injection · Strict selector hygiene
    ========================================================================== */
 
 :root {
@@ -1504,7 +1506,16 @@ input:checked + .slider-knob:before {
   animation: eye-pulse 2s infinite;
 }
 
-/* Responsive Viewport Optimizations */
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT — ALL DEVICE CLASSES
+   Mobile:  320px–767px   (phones, portrait & landscape)
+   Tablet:  768px–1023px  (iPad, Android tablets)
+   Laptop:  1024px–1439px (13"–15" laptops, 720p / 900p screens)
+   Desktop: 1440px+       (large monitors, 1080p+)
+   ========================================================================== */
+
+/* ---------- Shared: small-height compact mode ----------------------------- */
 @media (max-height: 800px) {
   .top-hud {
     top: 6px;
@@ -1542,39 +1553,24 @@ input:checked + .slider-knob:before {
     padding: 3px 6px;
   }
 
-  .quick-stat .stat-key {
-    font-size: 0.55rem;
-  }
+  .quick-stat .stat-key { font-size: 0.55rem; }
+  .quick-stat .stat-val { font-size: 0.72rem; }
 
-  .quick-stat .stat-val {
-    font-size: 0.72rem;
-  }
-
-  .camera-quick-bar {
-    gap: 4px;
-  }
+  .camera-quick-bar { gap: 4px; }
 
   .cam-btn {
     padding: 3px 5px;
     font-size: 0.66rem;
   }
 
-  .layer-card-group {
-    gap: 4px;
-  }
+  .layer-card-group { gap: 4px; }
 
   .layer-card {
     padding: 5px 8px;
   }
 
-  .layer-card .layer-name {
-    font-size: 0.74rem;
-  }
-
-  .layer-card .layer-desc {
-    font-size: 0.61rem;
-    line-height: 1.1;
-  }
+  .layer-card .layer-name { font-size: 0.74rem; }
+  .layer-card .layer-desc { font-size: 0.61rem; line-height: 1.1; }
 
   .threshold-container {
     padding: 6px 9px;
@@ -1584,5 +1580,730 @@ input:checked + .slider-knob:before {
   .range-ticks {
     font-size: 0.60rem;
     margin-top: 2px;
+  }
+}
+
+/* ---------- DESKTOP: 1440px and above ------------------------------------ */
+@media (min-width: 1440px) {
+  .top-hud {
+    top: 16px;
+    height: 68px;
+    padding: 0 22px;
+  }
+
+  .brand-text h1 {
+    font-size: 1.25rem;
+  }
+
+  .sidebar-panel {
+    top: 96px;
+    width: 370px;
+    max-height: calc(100vh - 114px);
+    padding: 18px;
+  }
+
+  .bottom-dock {
+    left: 402px;
+    bottom: 20px;
+    padding: 15px 24px;
+  }
+
+  .bottom-dock.expanded-left {
+    left: 20px;
+  }
+
+  .scientific-legend {
+    top: 96px;
+    right: 18px;
+    width: 280px;
+  }
+
+  .drilldown-drawer {
+    top: 96px;
+    right: 18px;
+    width: 480px;
+    max-height: calc(100vh - 114px);
+  }
+}
+
+/* ---------- LAPTOP: 1024px–1439px ---------------------------------------- */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .top-hud {
+    height: 60px;
+    padding: 0 14px;
+    gap: 8px;
+  }
+
+  .brand-text h1 {
+    font-size: 1rem;
+  }
+
+  .brand-text p {
+    font-size: 0.68rem;
+  }
+
+  .pipeline-badge {
+    font-size: 0.62rem;
+    padding: 1px 6px;
+  }
+
+  .telemetry-item {
+    padding: 4px 9px;
+  }
+
+  .telemetry-label { font-size: 0.58rem; }
+  .telemetry-value { font-size: 0.80rem; }
+
+  .view-mode-btn {
+    font-size: 0.70rem;
+    padding: 5px 9px;
+  }
+
+  .basemap-btn {
+    font-size: 0.70rem;
+    padding: 5px 8px;
+  }
+
+  .sidebar-panel {
+    top: 82px;
+    left: 14px;
+    width: 310px;
+    max-height: calc(100vh - 100px);
+    padding: 12px 13px;
+    gap: 10px;
+  }
+
+  .bottom-dock {
+    left: 338px;
+    right: 14px;
+    bottom: 14px;
+    padding: 11px 16px;
+  }
+
+  .bottom-dock.expanded-left {
+    left: 14px;
+  }
+
+  .scientific-legend {
+    top: 82px;
+    right: 14px;
+    width: 240px;
+    padding: 10px 12px;
+  }
+
+  .drilldown-drawer {
+    top: 82px;
+    right: 14px;
+    width: 400px;
+    max-height: calc(100vh - 100px);
+  }
+
+  .lead-time-sub {
+    font-size: 0.72rem;
+  }
+}
+
+/* ---------- TABLET: 768px–1023px ----------------------------------------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* HUD: stack brand + telemetry, hide some telemetry items */
+  .top-hud {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 6px;
+    row-gap: 6px;
+  }
+
+  .brand-section {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .brand-text h1 {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+
+  .brand-text p {
+    font-size: 0.63rem;
+  }
+
+  .pipeline-badge { display: none; }
+
+  /* Telemetry: scrollable horizontal strip */
+  .telemetry-strip {
+    flex: 0 1 auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    max-width: 100%;
+  }
+
+  .telemetry-strip::-webkit-scrollbar { display: none; }
+
+  .telemetry-item {
+    flex-shrink: 0;
+    padding: 4px 8px;
+  }
+
+  .telemetry-label { font-size: 0.56rem; }
+  .telemetry-value { font-size: 0.76rem; }
+
+  /* Hide DB status on tablet to save space */
+  .telemetry-item.db-status { display: none; }
+
+  /* View + Basemap switchers go to row 2 */
+  .view-mode-switcher,
+  .basemap-switcher {
+    order: 10;
+    flex: 0 0 auto;
+  }
+
+  .view-mode-btn,
+  .basemap-btn {
+    font-size: 0.68rem;
+    padding: 5px 8px;
+  }
+
+  /* Sidebar: narrower, starts below taller HUD */
+  .sidebar-panel {
+    top: 100px;
+    left: 10px;
+    width: 290px;
+    max-height: calc(100vh - 120px);
+    padding: 11px 12px;
+    gap: 9px;
+  }
+
+  .sidebar-panel.collapsed {
+    transform: translateX(-320px);
+  }
+
+  .bottom-dock {
+    left: 314px;
+    right: 10px;
+    bottom: 10px;
+    padding: 10px 14px;
+  }
+
+  .bottom-dock.expanded-left {
+    left: 10px;
+  }
+
+  /* Legend: narrower */
+  .scientific-legend {
+    top: 100px;
+    right: 10px;
+    width: 220px;
+    padding: 9px 11px;
+  }
+
+  /* Drawer: full-width slide from right */
+  .drilldown-drawer {
+    top: 100px;
+    right: 10px;
+    width: calc(100vw - 20px);
+    max-width: 480px;
+    max-height: calc(100vh - 120px);
+  }
+
+  /* Modal fits tablet */
+  .modal-dialog {
+    max-width: 90vw;
+  }
+
+  .db-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Touch targets min 44px */
+  .cam-btn,
+  .dock-btn,
+  .drawer-tab,
+  .view-mode-btn,
+  .basemap-btn,
+  .sidebar-toggle-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .layer-card {
+    min-height: 44px;
+  }
+
+  /* Range slider thumb bigger for touch */
+  .range-input::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------- MOBILE: up to 767px ------------------------------------------ */
+@media (max-width: 767px) {
+  /* Body: allow vertical scroll for overlaid panels */
+  body {
+    overflow: hidden;
+  }
+
+  /* HUD: compact single row at very top */
+  .top-hud {
+    top: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    height: auto;
+    min-height: 52px;
+    padding: 8px 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    justify-content: flex-start;
+  }
+
+  .brand-section {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .brand-symbol {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  .brand-symbol svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .brand-text h1 {
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  .brand-text p {
+    display: none;
+  }
+
+  /* Hide telemetry strip, view/basemap switchers from HUD on mobile */
+  .telemetry-strip,
+  .view-mode-switcher,
+  .basemap-switcher {
+    display: none;
+  }
+
+  /* Map fills whole viewport below HUD */
+  #map-view {
+    top: 52px;
+    height: calc(100vh - 52px);
+  }
+
+  /* Sidebar: slide-in bottom sheet on mobile */
+  .sidebar-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 55vh;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+    padding: 12px 14px 20px;
+    gap: 10px;
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 25;
+    transition: transform 0.35s var(--ease-smooth), opacity 0.3s ease;
+    /* drag handle */
+    padding-top: 18px;
+  }
+
+  /* Drag handle visual indicator */
+  .sidebar-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+
+  .sidebar-panel.collapsed {
+    transform: translateY(calc(100% - 44px));
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Show a "peek" handle even when collapsed */
+  .sidebar-panel.collapsed::after {
+    content: '⌃ Control Panel';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 0.05em;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* Legend: top-right, compact */
+  .scientific-legend {
+    top: 60px;
+    right: 10px;
+    left: auto;
+    width: calc(100vw - 80px);
+    max-width: 240px;
+    padding: 8px 10px;
+    z-index: 21;
+  }
+
+  /* Bottom dock: full width, above sidebar bottom sheet */
+  .bottom-dock {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0;
+    padding: 8px 12px;
+    z-index: 19; /* below sidebar */
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    /* On mobile sidebar overlaps dock; hide dock when sidebar visible */
+    display: none;
+  }
+
+  /* Drilldown drawer: full screen overlay on mobile */
+  .drilldown-drawer {
+    top: 52px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 52px);
+    border-radius: 0;
+    transform: translateX(110vw);
+    z-index: 50;
+  }
+
+  .drilldown-drawer.open {
+    transform: translateX(0);
+  }
+
+  /* Drawer tabs: scrollable, no wrap */
+  .drawer-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding-bottom: 4px;
+  }
+
+  .drawer-tabs::-webkit-scrollbar { display: none; }
+
+  .drawer-tab {
+    flex-shrink: 0;
+    font-size: 0.70rem;
+    padding: 8px 10px;
+    min-height: 44px;
+  }
+
+  /* Touch targets */
+  .cam-btn,
+  .dock-btn,
+  .sidebar-toggle-btn,
+  .view-mode-btn,
+  .basemap-btn,
+  .layer-card,
+  .drawer-close,
+  .drawer-tab {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Range slider thumb: bigger for touch */
+  .range-input::-webkit-slider-thumb {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Range input: taller click area */
+  .range-input {
+    height: 8px;
+    padding: 8px 0;
+    box-sizing: content-box;
+  }
+
+  /* Quick stats: 2-col grid fits fine on mobile */
+  .quick-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  /* Camera bar: full width buttons */
+  .camera-quick-bar {
+    gap: 6px;
+  }
+
+  .cam-btn {
+    font-size: 0.74rem;
+    padding: 10px 6px;
+  }
+
+  /* Layer cards: bigger tap area */
+  .layer-card {
+    padding: 10px 12px;
+  }
+
+  .layer-name { font-size: 0.85rem; }
+  .layer-desc { font-size: 0.70rem; }
+
+  /* Switch toggle: bigger */
+  .switch {
+    width: 42px;
+    height: 24px;
+  }
+
+  .slider-knob:before {
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  input:checked + .slider-knob:before {
+    transform: translateX(18px);
+  }
+
+  /* Modal: full screen on mobile */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-dialog {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+    width: 100%;
+  }
+
+  .db-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  /* Toast: bottom-center on mobile */
+  .toast-notice {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Metric row in drawer: single column on very small screens */
+  .drawer-metric-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .geo-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* XML code block: smaller on mobile */
+  .xml-code-block {
+    font-size: 0.62rem;
+    max-height: 140px;
+  }
+
+  /* Dispatch button: full width */
+  .btn-dispatch-action {
+    width: 100%;
+    padding: 13px 16px;
+    font-size: 0.82rem;
+  }
+}
+
+/* ---------- Very small phones: 320px–374px ------------------------------- */
+@media (max-width: 374px) {
+  .brand-text h1 {
+    font-size: 0.74rem;
+    max-width: 130px;
+  }
+
+  .scientific-legend {
+    width: calc(100vw - 20px);
+    max-width: none;
+    right: 10px;
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer-metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .geo-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Landscape phone: 480px–767px landscape ----------------------- */
+@media (max-width: 767px) and (orientation: landscape) {
+  .top-hud {
+    min-height: 44px;
+    padding: 4px 12px;
+  }
+
+  #map-view {
+    top: 44px;
+    height: calc(100vh - 44px);
+  }
+
+  .sidebar-panel {
+    max-height: 60vh;
+  }
+
+  .scientific-legend {
+    top: 52px;
+    max-width: 200px;
+    padding: 6px 9px;
+  }
+
+  .scientific-legend .legend-head {
+    font-size: 0.65rem;
+  }
+
+  .drilldown-drawer {
+    top: 44px;
+    max-height: calc(100vh - 44px);
+  }
+
+  .drawer-body {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+}
+
+/* ---------- Print: hide UI chrome ---------------------------------------- */
+@media print {
+  .top-hud,
+  .sidebar-panel,
+  .bottom-dock,
+  .drilldown-drawer,
+  .scientific-legend,
+  .toast-notice,
+  .modal-overlay { display: none !important; }
+
+  #map-view {
+    position: static;
+    width: 100%;
+    height: 80vh;
+  }
+}
+
+/* ---------- Reduced Motion ------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .status-dot.online {
+    animation: none;
+    box-shadow: 0 0 4px var(--accent-emerald);
+  }
+
+  .storm-eye-marker {
+    animation: none;
+  }
+}
+
+/* ---------- High-DPI / Retina adjustments -------------------------------- */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .layer-swatch {
+    border-radius: 3px;
+  }
+
+  .range-input {
+    height: 5px;
+  }
+}
+
+/* ---------- Hover: only apply hover effects on pointer devices ----------- */
+@media (hover: none) {
+  /* Remove hover state for touch devices to prevent sticky hovers */
+  .telemetry-item:hover,
+  .event-info-box:hover,
+  .layer-card:hover,
+  .cam-btn:hover,
+  .sidebar-toggle-btn:hover,
+  .view-mode-btn:hover,
+  .basemap-btn:hover,
+  .dock-btn:hover,
+  .speed-badge:hover,
+  .drawer-tab:hover,
+  .drawer-close:hover,
+  .btn-dispatch-action:hover,
+  .btn-seed-data:hover,
+  .btn-modal-close:hover,
+  .btn-copy-sql:hover,
+  .modal-close:hover {
+    /* Reset to non-hover state — let :active provide feedback */
+    filter: none;
+    transform: none;
+  }
+
+  /* Active feedback for touch */
+  .cam-btn:active,
+  .layer-card:active,
+  .view-mode-btn:active,
+  .basemap-btn:active {
+    opacity: 0.75;
+    transform: scale(0.97);
+    transition: transform 0.08s ease, opacity 0.08s ease;
+  }
+}
+
+/* ---------- Mobile sidebar toggle: sidebar-toggle-btn expands panel ------ */
+/* On mobile the toggle button opens/closes the bottom sheet */
+@media (max-width: 767px) {
+  .sidebar-toggle-btn {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 9px;
   }
 }
