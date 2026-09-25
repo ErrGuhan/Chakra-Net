@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChakraNet — Extreme Weather Tracker & 5 km Diffusion Downscaler</title>
+  <meta name="description" content="ChakraNet: Operational dual-stage atmospheric physics pipeline tracking extreme weather anomalies on an M9 icosahedral mesh and downscaling to 5 km probabilistic hazard maps with CAP 1.2 alerts.">
+
+  <!-- Google Fonts: Inter, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- MapLibre GL JS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <!-- Professional Geospatial Stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- MapLibre Canvas Viewport -->
+    <div id="map-view" aria-label="Geospatial Map Viewport"></div>
+
+    <!-- Top Navigation HUD Bar -->
+    <header class="top-hud" id="top-hud">
+      <div class="brand-section">
+        <button class="sidebar-toggle-btn active" id="sidebar-toggle-btn" onclick="app.toggleSidebar()" title="Toggle Control Panel (Collapse / Expand)" aria-label="Toggle Panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </button>
+        <div class="brand-symbol" title="ChakraNet Emblem">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>ChakraNet Operational Command</h1>
+          <p>
+            <span>NCMRWF / MoES · SIH 2026</span>
+            <span class="pipeline-badge">Dual-Stage NWP Downscaling</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Storm Telemetry Strip -->
+      <div class="telemetry-strip" id="telemetry-strip">
+        <div class="telemetry-item intensity-alert">
+          <span class="telemetry-label">Intensity</span>
+          <span class="telemetry-value text-danger">ESCS (Cat 5 Eq)</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Pressure</span>
+          <span class="telemetry-value" id="hud-pressure">940 hPa</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Peak Wind</span>
+          <span class="telemetry-value text-primary-val" id="hud-wind">215 km/h</span>
+        </div>
+        <div class="telemetry-item cap-alert">
+          <span class="telemetry-label">Alert Status</span>
+          <span class="telemetry-value text-warning">OASIS CAP 1.2</span>
+        </div>
+        <div class="telemetry-item db-status" id="hud-db-status" title="Supabase Server API Database">
+          <span class="telemetry-label">Database</span>
+          <span class="telemetry-value text-success" id="hud-db-val">⚡ Supabase Live</span>
+        </div>
+      </div>
+
+      <!-- 4D Spatiotemporal View Switcher (3D Spatial Volumetric Extrusion + Time Progression) -->
+      <div class="view-mode-switcher" role="radiogroup" aria-label="Dimensional Map View">
+        <button class="view-mode-btn" id="btn-view-2d" onclick="app.setViewMode('2d')" title="2D Orthographic Map View (Flat Canvas)">
+          🗺️ 2D Plan
+        </button>
+        <button class="view-mode-btn active" id="btn-view-4d" onclick="app.setViewMode('4d')" title="4D Spatiotemporal Volumetric View (3D Space Extrusion + Time Progression)">
+          🌐 4D Volumetric
+        </button>
+      </div>
+
+      <!-- Basemap Switcher (Clean Light / Satellite / Terrain / Dark) -->
+      <div class="basemap-switcher" role="radiogroup" aria-label="Basemap Style Selector">
+        <button class="basemap-btn active" id="btn-bm-light" onclick="app.setBasemap('light-clean')" title="Clean White Geographical Canvas">
+          ☀️ Light
+        </button>
+        <button class="basemap-btn" id="btn-bm-satellite" onclick="app.setBasemap('google-satellite')" title="Real Landscape Google Satellite Imagery">
+          🛰️ Satellite
+        </button>
+        <button class="basemap-btn" id="btn-bm-terrain" onclick="app.setBasemap('google-terrain')" title="Topographic Elevation & Hillshading">
+          🏔️ Terrain
+        </button>
+        <button class="basemap-btn" id="btn-bm-dark" onclick="app.setBasemap('dark-tactical')" title="High Contrast Tactical Canvas">
+          🌑 Dark
+        </button>
+      </div>
+    </header>
+
+    <!-- Left Control Sidebar Panel -->
+    <aside class="sidebar-panel" id="control-sidebar">
+      
+      <!-- Event Overview Section -->
+      <section>
+        <div class="section-title">
+          <span>Active NWP Case Study</span>
+          <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; letter-spacing: 0.05em;">VERIFIED IMD ARCHIVE</span>
+        </div>
+        <div class="event-info-box">
+          <div class="event-header">
+            <span class="event-title">Cyclone Phailin (October 2013)</span>
+          </div>
+          <div class="event-sub">
+            Tracked across Bay of Bengal to landfall at Gopalpur, Ganjam district, Odisha. High-resolution 5 km residual diffusion downscaling.
+          </div>
+
+          <div class="quick-stats">
+            <div class="quick-stat">
+              <div class="stat-key">Input Ensemble</div>
+              <div class="stat-val" style="color: var(--accent-cyan);">12 km (23 M)</div>
+            </div>
+            <div class="quick-stat">
+              <div class="stat-key">Downscaled Grid</div>
+              <div class="stat-val" style="color: var(--accent-emerald);">~5 km Target</div>
+            </div>
+            <div class="quick-stat">
+              <div class="stat-key">Resolution Gain</div>
+              <div class="stat-val" style="color: var(--accent-amber);">5.8× Finer</div>
+            </div>
+            <div class="quick-stat">
+              <div class="stat-key">Latency</div>
+              <div class="stat-val" style="color: #ffffff;">&lt; 10 min</div>
+            </div>
+          </div>
+
+          <!-- Quick Camera Bookmarks -->
+          <div class="camera-quick-bar">
+            <button class="cam-btn" onclick="app.flyToLandfall()" title="Focus on Gopalpur Landfall Zone">📍 Landfall</button>
+            <button class="cam-btn" onclick="app.flyToStormEye()" title="Center on Current Storm Eye">🌀 Storm Eye</button>
+            <button class="cam-btn" onclick="app.resetOverview()" title="View Entire Bay of Bengal Basin">🗺️ Overview</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Visualization Layers -->
+      <section>
+        <div class="section-title">
+          <span>Forecast Pipeline Layers</span>
+        </div>
+        <div class="layer-card-group">
+          
+          <!-- Stage 1 Tracker Cone -->
+          <div class="layer-card active" id="card-stage1-cone" onclick="app.toggleLayer('stage1-cone')">
+            <div class="layer-meta">
+              <div class="layer-swatch" style="background: var(--accent-cyan); color: var(--accent-cyan);"></div>
+              <div>
+                <div class="layer-name">Stage 1: GNN Anomaly Cone</div>
+                <div class="layer-desc">90% cross-member dispersion cone &amp; 4D crop box</div>
+              </div>
+            </div>
+            <label class="switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chk-stage1-cone" checked onchange="app.toggleLayer('stage1-cone')">
+              <span class="slider-knob"></span>
+            </label>
+          </div>
+
+          <!-- Stage 2 Downscaled Hazard Map -->
+          <div class="layer-card active" id="card-stage2-hazard" onclick="app.toggleLayer('stage2-hazard')">
+            <div class="layer-meta">
+              <div class="layer-swatch" style="background: var(--accent-crimson); color: var(--accent-crimson);"></div>
+              <div>
+                <div class="layer-name">Stage 2: 5 km Hazard Grid</div>
+                <div class="layer-desc">Continuous exceedance probability P(Rainfall &gt; τ)</div>
+              </div>
+            </div>
+            <label class="switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chk-stage2-hazard" checked onchange="app.toggleLayer('stage2-hazard')">
+              <span class="slider-knob"></span>
+            </label>
+          </div>
+
+          <!-- 5.0 km Geodesic Impact Radius Buffer -->
+          <div class="layer-card active" id="card-radius-5km" onclick="app.toggleLayer('radius-5km')">
+            <div class="layer-meta">
+              <div class="layer-swatch" style="background: #0284c7; color: #0284c7;"></div>
+              <div>
+                <div class="layer-name">5.0 km Geodesic Radius Perimeter</div>
+                <div class="layer-desc">Exact 5 km safety buffer (78.5 km² impact perimeter)</div>
+              </div>
+            </div>
+            <label class="switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chk-radius-5km" checked onchange="app.toggleLayer('radius-5km')">
+              <span class="slider-knob"></span>
+            </label>
+          </div>
+
+          <!-- Open-Source Coastal District Boundaries -->
+          <div class="layer-card active" id="card-districts" onclick="app.toggleLayer('districts')">
+            <div class="layer-meta">
+              <div class="layer-swatch" style="background: var(--accent-purple); color: var(--accent-purple);"></div>
+              <div>
+                <div class="layer-name">Coastal District Boundaries</div>
+                <div class="layer-desc">Real Odisha &amp; Andhra Pradesh administrative zones</div>
+              </div>
+            </div>
+            <label class="switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chk-districts" checked onchange="app.toggleLayer('districts')">
+              <span class="slider-knob"></span>
+            </label>
+          </div>
+
+          <!-- Stage 0 Raw NWP -->
+          <div class="layer-card" id="card-raw-nwp" onclick="app.toggleLayer('raw-nwp')">
+            <div class="layer-meta">
+              <div class="layer-swatch" style="background: var(--accent-blue); color: var(--accent-blue);"></div>
+              <div>
+                <div class="layer-name">Stage 0: 12 km Coarse Mean</div>
+                <div class="layer-desc">Uncalibrated raw NWP precipitation contours</div>
+              </div>
+            </div>
+            <label class="switch" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chk-raw-nwp" onchange="app.toggleLayer('raw-nwp')">
+              <span class="slider-knob"></span>
+            </label>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Exceedance Threshold Slider -->
+      <section>
+        <div class="threshold-container">
+          <div class="section-title" style="margin-bottom: 2px;">
+            <span>Hazard Rain Threshold (τ)</span>
+            <span id="label-threshold" style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.9rem;">75 mm</span>
+          </div>
+          <input type="range" id="range-threshold" min="35" max="150" step="10" value="75" class="range-input" oninput="app.setThreshold(this.value)" aria-label="Hazard Rainfall Exceedance Threshold">
+          <div class="range-ticks">
+            <span>35 mm (Advisory)</span>
+            <span>75 mm (Warning)</span>
+            <span>150 mm (Extreme)</span>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- Scientific Discrete Risk Color Legend -->
+    <div class="scientific-legend" id="map-legend">
+      <div class="legend-header">
+        <span class="legend-head">Precipitation Hazard Probability P(Rain &gt; τ)</span>
+      </div>
+      <div class="legend-bar-continuous">
+        <div class="legend-seg seg-low" title="0% - 25% (Low Risk)"></div>
+        <div class="legend-seg seg-mod" title="25% - 50% (Moderate Risk)"></div>
+        <div class="legend-seg seg-high" title="50% - 75% (High Risk)"></div>
+        <div class="legend-seg seg-severe" title="75% - 90% (Severe Risk)"></div>
+        <div class="legend-seg seg-extreme" title="90% - 100% (Extreme Risk)"></div>
+      </div>
+      <div class="legend-ticks">
+        <span>0%</span>
+        <span>25%</span>
+        <span>50%</span>
+        <span>75%</span>
+        <span>100%</span>
+      </div>
+      <div class="legend-risk-pills">
+        <span class="risk-pill pill-low">Low</span>
+        <span class="risk-pill pill-mod">Moderate</span>
+        <span class="risk-pill pill-high">High</span>
+        <span class="risk-pill pill-severe">Severe</span>
+        <span class="risk-pill pill-extreme">Extreme</span>
+      </div>
+    </div>
+
+    <!-- Bottom Timeline & Playback Dock -->
+    <div class="bottom-dock" id="bottom-dock">
+      <div class="dock-header">
+        <div class="dock-lead-time">
+          <span class="lead-time-pill" id="badge-lead-time">T+108h</span>
+          <span class="lead-time-sub" id="label-lead-time-date">Oct 12, 2013 12:00 UTC · Landfall at Gopalpur, Odisha</span>
+        </div>
+        <div class="dock-controls">
+          <button class="dock-btn" id="btn-play-pause" onclick="app.togglePlayback()" title="Play / Pause Forecast Timeline">
+            <svg id="play-svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+          <span class="speed-badge" id="btn-speed" onclick="app.cycleSpeed()" title="Cycle playback speed">1x Speed</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <input type="range" id="slider-timeline" min="0" max="10" step="1" value="9" class="range-input" oninput="app.onTimelineChange(this.value)" aria-label="Forecast Lead Time Scrubber">
+        <div class="range-ticks" id="timeline-tick-labels">
+          <span>T+0h</span>
+          <span>T+24h</span>
+          <span>T+48h</span>
+          <span>T+72h</span>
+          <span>T+96h</span>
+          <span>T+120h</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide-Out Right Inspection & CAP 1.2 Alert Drawer -->
+    <aside class="drilldown-drawer" id="drilldown-drawer" aria-label="Cell Detail and CAP Alert Drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <h2 id="drawer-cell-name">Odisha Coastal 5 km Cell</h2>
+          <p id="drawer-coords">19.26°N, 84.91°E · Ganjam District</p>
+        </div>
+        <button class="drawer-close" onclick="app.closeDrawer()" aria-label="Close Inspection Drawer">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Metric Grid -->
+        <div class="drawer-metric-row">
+          <div class="drawer-metric">
+            <div class="stat-key">Severity Level</div>
+            <div id="drawer-severity-badge">
+              <span class="severity-tag tag-extreme">Extreme</span>
+            </div>
+          </div>
+          <div class="drawer-metric">
+            <div class="stat-key">Exceedance Probability</div>
+            <div class="stat-val" id="drawer-prob-val" style="color: var(--accent-crimson);">92%</div>
+          </div>
+          <div class="drawer-metric">
+            <div class="stat-key">24h Mean Precipitation</div>
+            <div class="stat-val" id="drawer-rain-val">185 mm/24h</div>
+          </div>
+          <div class="drawer-metric">
+            <div class="stat-key">P99 Tail Bias</div>
+            <div class="stat-val" id="drawer-p99-val">+4.2 mm</div>
+          </div>
+        </div>
+
+        <!-- Accurate 5 km Radius & Geometry Info Card -->
+        <div class="drawer-geometry-card">
+          <div class="geo-card-header">
+            <span class="geo-badge">📐 Accurate Spatial Mapping</span>
+            <span class="geo-coords" id="drawer-exact-bounds">5.0 km × 5.0 km Grid Cell</span>
+          </div>
+          <div class="geo-metrics-grid">
+            <div class="geo-metric-item">
+              <span class="geo-label">Safety Warning Radius</span>
+              <span class="geo-val" id="drawer-radius-val">5.0 km Geodesic</span>
+            </div>
+            <div class="geo-metric-item">
+              <span class="geo-label">Impact Buffer Area</span>
+              <span class="geo-val" id="drawer-buffer-val">78.54 km²</span>
+            </div>
+            <div class="geo-metric-item">
+              <span class="geo-label">Distance to Gopalpur</span>
+              <span class="geo-val" id="drawer-dist-landfall">12.4 km</span>
+            </div>
+            <div class="geo-metric-item">
+              <span class="geo-label">4D Convective Column</span>
+              <span class="geo-val" id="drawer-col-height">11,200 m (3D)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Tabs -->
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" id="tab-en" onclick="app.setAlertTab('en')">English Advisory</button>
+          <button class="drawer-tab" id="tab-hi" onclick="app.setAlertTab('hi')">Hindi (Bhashini)</button>
+          <button class="drawer-tab" id="tab-or" onclick="app.setAlertTab('or')">Odia (Regional)</button>
+          <button class="drawer-tab" id="tab-xml" onclick="app.setAlertTab('xml')">OASIS CAP 1.2 XML</button>
+        </div>
+
+        <!-- Alert Content Boxes -->
+        <div class="alert-message-box" id="box-alert-en">
+          <div class="alert-msg-headline" id="drawer-headline-en">ChakraNet Warning: Extreme Cyclone Hazard at T+108h</div>
+          <div class="alert-msg-desc" id="drawer-desc-en">
+            High-confidence destructive storm surge, gale winds (&gt; 200 km/h), and extreme rainfall (&gt; 150 mm) anticipated near Gopalpur coast.
+          </div>
+          <div class="alert-msg-instruction" id="drawer-instruction-en">
+            Action: Move to designated cyclone multi-purpose shelters immediately. Avoid coastal embankments. Comply with NDMA / OSDMA directives.
+          </div>
+        </div>
+
+        <div class="alert-message-box" id="box-alert-hi" style="display: none; border-left-color: var(--accent-amber);">
+          <div class="alert-msg-headline" id="drawer-headline-hi">चक्रवात चेतावनी: अत्यधिक गंभीर मौसम खतरा (Cyclone Phailin)</div>
+          <div class="alert-msg-desc" id="drawer-desc-hi">
+            चक्रवातनेट (ChakraNet) वायुमंडलीय विश्लेषण प्रणाली द्वारा गोपालपुर, गंजम जिला (ओडिशा) में मूसलाधार वर्षा और तेज चक्रवाती हवाओं की चेतावनी।
+          </div>
+          <div class="alert-msg-instruction" id="drawer-instruction-hi">
+            निर्देश: तुरंत पक्के चक्रवात आश्रय स्थलों में जाएं। समुद्र तट और निचले इलाकों से दूर रहें। राज्य आपदा प्रबंधन प्राधिकरण کے निर्देशों का पालन करें।
+          </div>
+        </div>
+
+        <div class="alert-message-box" id="box-alert-or" style="display: none; border-left-color: var(--accent-cyan);">
+          <div class="alert-msg-headline" id="drawer-headline-or">ବାତ୍ୟା ସତର୍କତା: ଅତ୍ୟନ୍ତ ଗମ୍ଭୀର ବିପଦ (Cyclone Phailin)</div>
+          <div class="alert-msg-desc" id="drawer-desc-or">
+            ଚକ୍ରବାତନେଟ୍ ବାୟୁମଣ୍ଡଳୀୟ ପୂର୍ବାନୁମାନ ବ୍ୟବସ୍ଥା ଦ୍ୱାରା ଗୋପାଳପୁର, ଗଞ୍ଜାମ ଜିଲ୍ଲା ଉପକୂଳରେ ପ୍ରବଳ ବର୍ଷା ଓ ଝଡ଼ ପବନର ସତର୍କ ସୂଚନା।
+          </div>
+          <div class="alert-msg-instruction" id="drawer-instruction-or">
+            ନିର୍ଦ୍ଦେଶ: ତୁରନ୍ତ ନିକଟସ୍ଥ ବାତ୍ୟା ଆଶ୍ରୟସ୍ଥଳକୁ ଯାଆନ୍ତୁ। ସମୁଦ୍ରକୂଳ ଓ ତଳିଆ ଅଞ୍ଚଳରୁ ଦୂରେଇ ରୁହନ୍ତୁ। ଓଡ଼ିଶା ରାଜ୍ୟ ବିପର୍ଯ୍ୟୟ ପରିଚାଳନା ପ୍ରାଧିକରଣ (OSDMA) ର ନିର୍ଦ୍ଦେଶାବଳୀ ପାଳନ କରନ୍ତୁ।
+          </div>
+        </div>
+
+        <div id="box-alert-xml" style="display: none;">
+          <pre class="xml-code-block" id="drawer-xml-content"></pre>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button class="btn-dispatch-action" id="btn-dispatch-alert" onclick="app.dispatchSimulatedAlert()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+          Dispatch Simulated CAP Alert (SACHET)
+        </button>
+        <span class="sim-disclaimer">
+          ⚠️ SIMULATION MODE — Common Alerting Protocol (CAP 1.2) transmission simulated for research evaluation.
+        </span>
+      </div>
+    </aside>
+
+    <!-- Global Notification Toast -->
+    <div class="toast-notice" id="toast-notice" role="alert">
+      <span id="toast-text">Alert dispatched successfully.</span>
+    </div>
+
+  </div>
+
+  <!-- Dashboard Application Controller -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

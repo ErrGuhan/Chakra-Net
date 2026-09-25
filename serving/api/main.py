@@ -48,7 +48,10 @@ app.include_router(api_router, prefix="/api/v1", tags=["ChakraNet Versioned API"
 
 # Frontend directory
 frontend_dir = SERVING_DIR / "frontend"
-frontend_dir.mkdir(parents=True, exist_ok=True)
+try:
+    frontend_dir.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    pass
 
 # Mount frontend static assets
 app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")

@@ -1,0 +1,29 @@
+# ChakraNet Full Research & Machine Learning Stack
+# For local model training, GNN experiments, diffusion sampling, and offline evaluation
+# Install via: pip install -r requirements-ml.txt
+
+-r requirements.txt
+
+# Core Geospatial & Numerical Analysis
+scipy>=1.10.0
+matplotlib>=3.7.0
+cartopy>=0.21.0; platform_system != "Windows"  # Optional on Windows
+shapely>=2.0.0
+pyproj>=3.5.0
+geopandas>=0.13.0
+
+# NWP Data Handling
+xarray>=2023.5.0
+zarr>=2.14.0
+netCDF4>=1.6.0
+
+# Deep Learning Frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+diffusers>=0.20.0
+huggingface-hub>=0.16.0
+
+# Testing & Tracking
+pytest>=7.3.0
+httpx>=0.24.0
+mlflow>=2.4.0

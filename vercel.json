@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "serving/**,data/**,config.py",
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/events",
+      "destination": "/api/index.py?__path=/events"
+    },
+    {
+      "source": "/events/:path*",
+      "destination": "/api/index.py?__path=/events/:path*"
+    },
+    {
+      "source": "/db/:path*",
+      "destination": "/api/index.py?__path=/db/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.py?__path=/api/:path*"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/index.py?__path=/docs"
+    },
+    {
+      "source": "/openapi.json",
+      "destination": "/api/index.py?__path=/openapi.json"
+    }
+  ]
+}

@@ -68,7 +68,16 @@ package-lock.json
 # Test caches
 .pytest_cache/
 
+# Vercel deployment cache
+.vercel/
+uv.lock
+
+
 # Keep tests/artifacts/ directory structure intact
 !tests/artifacts/
 !tests/artifacts/.gitkeep
 
+
+
+.vercel
+.env*

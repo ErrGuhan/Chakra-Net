@@ -56,9 +56,12 @@ class PhailinDataLoader:
             return {k: data[k] for k in data.files}
 
         print(f"[PhailinDataLoader] Generating 12 km ensemble ({self.n_members} members, {len(self.lead_times)} lead times)...")
-        data = self._generate_physics_ensemble()
-        np.savez_compressed(self.cache_file, **data)
-        print(f"[PhailinDataLoader] Cached dataset to {self.cache_file}")
+        try:
+            self.cache_file.parent.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(self.cache_file, **data)
+            print(f"[PhailinDataLoader] Cached dataset to {self.cache_file}")
+        except (OSError, PermissionError):
+            pass  # Read-only serverless filesystem (e.g. Vercel)
         return data
 
     def _generate_physics_ensemble(self) -> Dict[str, np.ndarray]:
