@@ -70,14 +70,21 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-base);
   color: var(--text-primary);
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -87,9 +94,12 @@ body {
 
 #app-container {
   display: flex;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
   position: relative;
+  overflow: hidden;
 }
 
 #map-view {
@@ -140,6 +150,7 @@ body {
   top: 14px;
   left: 16px;
   right: 16px;
+  max-width: calc(100vw - 32px);
   height: 64px;
   background: var(--bg-surface);
   backdrop-filter: blur(18px);
@@ -152,12 +163,15 @@ body {
   padding: 0 16px;
   z-index: 20;
   box-shadow: var(--shadow-hud);
+  overflow: hidden;
 }
 
 .brand-section {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 /* Sidebar Toggle Button */
@@ -246,19 +260,23 @@ body {
 .telemetry-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .telemetry-item {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .telemetry-item:hover {
@@ -819,7 +837,7 @@ input:checked + .slider-knob:before {
 
 .quick-stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -831,6 +849,7 @@ input:checked + .slider-knob:before {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .q-label {
@@ -1079,6 +1098,7 @@ input:checked + .slider-knob:before {
   top: 88px;
   right: 16px;
   width: 440px;
+  max-width: calc(100vw - 32px);
   max-height: calc(100vh - 106px);
   background: var(--bg-surface-elevated);
   backdrop-filter: blur(20px);
@@ -1090,16 +1110,18 @@ input:checked + .slider-knob:before {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform: translateX(480px);
+  transform: translateX(calc(100% + 40px));
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.3s var(--ease-smooth), opacity 0.3s var(--ease-smooth);
+  visibility: hidden;
+  transition: transform 0.3s var(--ease-smooth), opacity 0.3s var(--ease-smooth), visibility 0.3s ease;
 }
 
 .drilldown-drawer.open {
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 
 .drawer-header {
@@ -1165,7 +1187,7 @@ input:checked + .slider-knob:before {
 /* Metric Cards inside drawer */
 .drawer-metric-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1174,6 +1196,7 @@ input:checked + .slider-knob:before {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 8px 11px;
+  min-width: 0;
 }
 
 .severity-tag {
@@ -1225,7 +1248,7 @@ input:checked + .slider-knob:before {
 
 .geo-metrics-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -1237,6 +1260,7 @@ input:checked + .slider-knob:before {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .geo-label {
@@ -1463,7 +1487,7 @@ input:checked + .slider-knob:before {
 
 .db-telemetry-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
 }
 
@@ -1475,6 +1499,7 @@ input:checked + .slider-knob:before {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
 }
 
 .db-label {
@@ -1799,17 +1824,17 @@ input:checked + .slider-knob:before {
 /* ---------- LAPTOP: 1024px–1439px ---------------------------------------- */
 @media (min-width: 1024px) and (max-width: 1439px) {
   .top-hud {
-    height: 60px;
-    padding: 0 14px;
+    height: 58px;
+    padding: 0 12px;
     gap: 8px;
   }
 
-  .brand-text h1 {
-    font-size: 1rem;
+  .brand-title-row h1 {
+    font-size: 1.05rem;
   }
 
-  .brand-text p {
-    font-size: 0.68rem;
+  .brand-sub {
+    display: none;
   }
 
   .pipeline-badge {
@@ -1817,55 +1842,65 @@ input:checked + .slider-knob:before {
     padding: 1px 6px;
   }
 
-  .telemetry-item {
-    padding: 4px 9px;
+  .telemetry-strip {
+    gap: 6px;
   }
 
-  .telemetry-label { font-size: 0.58rem; }
-  .telemetry-value { font-size: 0.80rem; }
+  .telemetry-item {
+    padding: 4px 8px;
+    gap: 1px;
+  }
+
+  .telemetry-label { font-size: 0.54rem; }
+  .telemetry-value { font-size: 0.78rem; }
+
+  .hud-right-controls {
+    gap: 6px;
+  }
 
   .view-mode-btn {
-    font-size: 0.70rem;
-    padding: 5px 9px;
+    font-size: 0.68rem;
+    padding: 4px 8px;
   }
 
   .basemap-btn {
-    font-size: 0.70rem;
-    padding: 5px 8px;
+    font-size: 0.66rem;
+    padding: 4px 6px;
   }
 
   .sidebar-panel {
-    top: 82px;
-    left: 14px;
+    top: 78px;
+    left: 12px;
     width: 310px;
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 96px);
     padding: 12px 13px;
     gap: 10px;
   }
 
   .bottom-dock {
-    left: 338px;
-    right: 14px;
-    bottom: 14px;
-    padding: 11px 16px;
+    left: 334px;
+    right: 12px;
+    bottom: 12px;
+    padding: 10px 14px;
   }
 
   .bottom-dock.expanded-left {
-    left: 14px;
+    left: 12px;
   }
 
   .scientific-legend {
-    top: 82px;
-    right: 14px;
+    top: 78px;
+    right: 12px;
     width: 240px;
     padding: 10px 12px;
   }
 
   .drilldown-drawer {
-    top: 82px;
-    right: 14px;
+    top: 78px;
+    right: 12px;
     width: 400px;
-    max-height: calc(100vh - 100px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 96px);
   }
 
   .lead-time-sub {
@@ -1875,114 +1910,112 @@ input:checked + .slider-knob:before {
 
 /* ---------- TABLET: 768px–1023px ----------------------------------------- */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* HUD: stack brand + telemetry, hide some telemetry items */
+  /* HUD: compact single row with clean spacing */
   .top-hud {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    height: auto;
-    min-height: 56px;
-    flex-wrap: wrap;
-    padding: 8px 12px;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    max-width: calc(100vw - 16px);
+    height: 52px;
+    min-height: 52px;
+    flex-wrap: nowrap;
+    padding: 0 10px;
     gap: 6px;
-    row-gap: 6px;
   }
 
   .brand-section {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
+    gap: 6px;
   }
 
-  .brand-text h1 {
-    font-size: 0.95rem;
+  .brand-title-row h1 {
+    font-size: 0.90rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 220px;
   }
 
-  .brand-text p {
-    font-size: 0.63rem;
+  .brand-sub {
+    display: none;
+  }
+
+  .brand-sub-badge {
+    display: none;
   }
 
   .pipeline-badge { display: none; }
 
-  /* Telemetry: scrollable horizontal strip */
+  /* Telemetry: essential items only */
   .telemetry-strip {
-    flex: 0 1 auto;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 6px;
-    max-width: 100%;
+    gap: 4px;
+    overflow: hidden;
   }
-
-  .telemetry-strip::-webkit-scrollbar { display: none; }
 
   .telemetry-item {
     flex-shrink: 0;
-    padding: 4px 8px;
+    padding: 3px 6px;
   }
 
-  .telemetry-label { font-size: 0.56rem; }
-  .telemetry-value { font-size: 0.76rem; }
+  .telemetry-label { font-size: 0.50rem; }
+  .telemetry-value { font-size: 0.72rem; }
 
   /* Hide DB status on tablet to save space */
   .telemetry-item.db-status { display: none; }
 
-  /* View + Basemap switchers go to row 2 */
-  .view-mode-switcher,
-  .basemap-switcher {
-    order: 10;
-    flex: 0 0 auto;
+  .hud-right-controls {
+    gap: 4px;
+    flex-shrink: 0;
   }
 
-  .view-mode-btn,
+  .view-mode-btn {
+    font-size: 0.64rem;
+    padding: 3px 6px;
+  }
+
   .basemap-btn {
-    font-size: 0.68rem;
-    padding: 5px 8px;
+    font-size: 0.64rem;
+    padding: 3px 5px;
   }
 
-  /* Sidebar: narrower, starts below taller HUD */
+  /* Sidebar: narrower, starts below HUD */
   .sidebar-panel {
-    top: 100px;
-    left: 10px;
-    width: 290px;
-    max-height: calc(100vh - 120px);
-    padding: 11px 12px;
+    top: 68px;
+    left: 8px;
+    width: 280px;
+    max-height: calc(100vh - 80px);
+    padding: 10px 12px;
     gap: 9px;
   }
 
   .sidebar-panel.collapsed {
-    transform: translateX(-320px);
+    transform: translateX(-300px);
   }
 
   .bottom-dock {
-    left: 314px;
-    right: 10px;
-    bottom: 10px;
-    padding: 10px 14px;
+    left: 296px;
+    right: 8px;
+    bottom: 8px;
+    padding: 8px 12px;
   }
 
   .bottom-dock.expanded-left {
-    left: 10px;
+    left: 8px;
   }
 
   /* Legend: narrower */
   .scientific-legend {
-    top: 100px;
-    right: 10px;
-    width: 220px;
-    padding: 9px 11px;
+    top: 68px;
+    right: 8px;
+    width: 200px;
+    padding: 7px 9px;
   }
 
   /* Drawer: full-width slide from right */
   .drilldown-drawer {
-    top: 100px;
-    right: 10px;
-    width: calc(100vw - 20px);
-    max-width: 480px;
-    max-height: calc(100vh - 120px);
+    top: 68px;
+    right: 8px;
+    width: 360px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 80px);
   }
 
   /* Modal fits tablet */
@@ -2001,18 +2034,18 @@ input:checked + .slider-knob:before {
   .view-mode-btn,
   .basemap-btn,
   .sidebar-toggle-btn {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 40px;
+    min-width: 40px;
   }
 
   .layer-card {
-    min-height: 44px;
+    min-height: 40px;
   }
 
   /* Range slider thumb bigger for touch */
   .range-input::-webkit-slider-thumb {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -2021,6 +2054,14 @@ input:checked + .slider-knob:before {
   /* Body: allow vertical scroll for overlaid panels */
   body {
     overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  #app-container {
+    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
   }
 
   /* HUD: compact single row at very top */
@@ -2031,6 +2072,7 @@ input:checked + .slider-knob:before {
     border-radius: 0;
     height: auto;
     min-height: 52px;
+    max-width: 100vw;
     padding: 8px 12px;
     gap: 8px;
     flex-wrap: nowrap;
@@ -2176,12 +2218,19 @@ input:checked + .slider-knob:before {
     max-width: 100%;
     max-height: calc(100vh - 52px);
     border-radius: 0;
-    transform: translateX(110vw);
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
     z-index: 50;
+    transition: transform 0.3s var(--ease-smooth), opacity 0.3s var(--ease-smooth), visibility 0.3s ease;
   }
 
   .drilldown-drawer.open {
     transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
   }
 
   /* Drawer tabs: scrollable, no wrap */
@@ -2230,8 +2279,8 @@ input:checked + .slider-knob:before {
   }
 
   /* Quick stats: 2-col grid fits fine on mobile */
-  .quick-stats {
-    grid-template-columns: 1fr 1fr;
+  .quick-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
@@ -2297,14 +2346,15 @@ input:checked + .slider-knob:before {
     justify-content: center;
   }
 
-  /* Metric row in drawer: single column on very small screens */
+  /* Metric row in drawer: 2 columns on mobile */
   .drawer-metric-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
   .geo-metrics-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
 
   /* XML code block: smaller on mobile */
@@ -2334,7 +2384,7 @@ input:checked + .slider-knob:before {
     right: 10px;
   }
 
-  .quick-stats {
+  .quick-stats-grid {
     grid-template-columns: 1fr;
   }
 
