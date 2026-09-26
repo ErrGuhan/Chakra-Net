@@ -828,6 +828,73 @@ input:checked + .slider-knob:before {
   transform: scale(1.2);
 }
 
+/* Issue 18: Timeline Track with Non-Monotonic Lifecycle Intensity Gradient */
+.timeline-slider-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 10px;
+}
+
+.timeline-range-input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    #0284c7 0%,     /* T+0h: Low */
+    #16a34a 20%,    /* T+24h: Moderate */
+    #f59e0b 35%,    /* T+36h: High */
+    #ea580c 50%,    /* T+60h: Severe */
+    #dc2626 68%,    /* T+72h-T+84h: Peak Cat 5 Extreme */
+    #dc2626 80%,    /* T+96h: Peak Extreme near coast */
+    #ea580c 90%,    /* T+108h: Landfall weakening */
+    #16a34a 100%    /* T+120h: Inland decay */
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.timeline-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: 2px solid var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.7);
+  transition: transform 0.15s ease;
+}
+
+.timeline-range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.timeline-peak-indicator {
+  position: absolute;
+  top: -8px;
+  left: 70%;
+  transform: translateX(-50%);
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #f87171;
+  background: rgba(220, 38, 38, 0.22);
+  border: 1px solid rgba(220, 38, 38, 0.45);
+  padding: 1px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.25);
+}
+
+.tick-peak {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
 .range-ticks {
   display: flex;
   justify-content: space-between;
@@ -1168,6 +1235,191 @@ input:checked + .slider-knob:before {
 .pill-high { color: #fbbf24; background: rgba(251, 191, 36, 0.14); }
 .pill-severe { color: #fb923c; background: rgba(251, 146, 60, 0.14); }
 .pill-extreme { color: #f87171; background: rgba(248, 113, 113, 0.16); }
+
+/* ==========================================================================
+   Places at Risk Panel (Right Screen Operational Readout)
+   ========================================================================== */
+
+.places-at-risk-panel {
+  position: absolute;
+  top: 195px;
+  right: 16px;
+  width: 260px;
+  background: var(--bg-surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: 10px 12px;
+  z-index: 20;
+  box-shadow: var(--shadow-hud);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: calc(100vh - 330px);
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.risk-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 6px;
+}
+
+.risk-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-panel-heading {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+}
+
+.risk-count-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 0.65rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.risk-panel-sub {
+  font-size: 0.60rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.risk-places-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.risk-places-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.risk-places-list::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+.risk-place-row {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 7px;
+  padding: 6px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.risk-place-row:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateX(-2px);
+}
+
+.risk-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.risk-place-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-tier-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.risk-place-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.risk-tier-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.tag-extreme {
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.tag-severe {
+  background: rgba(234, 88, 12, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(234, 88, 12, 0.4);
+}
+
+.tag-high {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.tag-moderate {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(22, 163, 74, 0.4);
+}
+
+.tag-low {
+  background: rgba(2, 132, 199, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(2, 132, 199, 0.4);
+}
+
+.risk-row-bottom {
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  padding-left: 13px;
+}
+
+.risk-empty-state {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.risk-empty-icon {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  display: block;
+}
 
 /* ==========================================================================
    Slide-in Cell Drill-Down & CAP 1.2 Alert Drawer (Dark Glass)
@@ -1893,6 +2145,13 @@ input:checked + .slider-knob:before {
     width: 280px;
   }
 
+  .places-at-risk-panel {
+    top: 215px;
+    right: 18px;
+    width: 280px;
+    max-height: calc(100vh - 350px);
+  }
+
   .drilldown-drawer {
     top: 96px;
     right: 18px;
@@ -1973,6 +2232,13 @@ input:checked + .slider-knob:before {
     right: 12px;
     width: 240px;
     padding: 10px 12px;
+  }
+
+  .places-at-risk-panel {
+    top: 188px;
+    right: 12px;
+    width: 240px;
+    max-height: calc(100vh - 310px);
   }
 
   .drilldown-drawer {

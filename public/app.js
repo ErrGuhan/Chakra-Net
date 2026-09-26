@@ -84,20 +84,30 @@ class ChakraNetController {
     this.hazardData = null;
     this.districtsData = null;
 
-    // Per-frame metadata — drives STATUS badge, pressure, wind, EFI (Issue 6 fix)
+    // Per-frame metadata — drives STATUS badge, pressure, wind, EFI, storm marker (Issue 6 & 17 fix)
     this.leadTimeInfo = [
-      { time: 0,   date: "Oct 08, 2013 00:00 UTC", mslp: 1002, wind: 45,  status: "Depression (Andaman Sea)" },
-      { time: 12,  date: "Oct 08, 2013 12:00 UTC", mslp: 998,  wind: 55,  status: "Deep Depression" },
-      { time: 24,  date: "Oct 09, 2013 00:00 UTC", mslp: 994,  wind: 65,  status: "Cyclonic Storm (Phailin Named)" },
-      { time: 36,  date: "Oct 09, 2013 12:00 UTC", mslp: 988,  wind: 85,  status: "Severe Cyclonic Storm" },
-      { time: 48,  date: "Oct 10, 2013 00:00 UTC", mslp: 978,  wind: 120, status: "Very Severe Cyclonic Storm" },
-      { time: 60,  date: "Oct 10, 2013 12:00 UTC", mslp: 960,  wind: 155, status: "Rapid Intensification" },
-      { time: 72,  date: "Oct 11, 2013 00:00 UTC", mslp: 940,  wind: 215, status: "Extremely Severe Cyclonic Storm (Cat 5 Eq)" },
-      { time: 84,  date: "Oct 11, 2013 12:00 UTC", mslp: 935,  wind: 230, status: "Peak Super Cyclone Intensity" },
-      { time: 96,  date: "Oct 12, 2013 00:00 UTC", mslp: 935,  wind: 220, status: "Approaching Odisha Coast" },
-      { time: 108, date: "Oct 12, 2013 12:00 UTC", mslp: 940,  wind: 215, status: "Landfall at Gopalpur, Odisha" },
-      { time: 120, date: "Oct 13, 2013 00:00 UTC", mslp: 970,  wind: 120, status: "Inland Weakening over Odisha" },
+      { time: 0,   date: "Oct 08, 2013 00:00 UTC", mslp: 1002, wind: 45,  lon: 94.80, lat: 10.50, status: "Depression (Andaman Sea)" },
+      { time: 12,  date: "Oct 08, 2013 12:00 UTC", mslp: 998,  wind: 55,  lon: 93.50, lat: 11.20, status: "Deep Depression" },
+      { time: 24,  date: "Oct 09, 2013 00:00 UTC", mslp: 994,  wind: 65,  lon: 92.50, lat: 12.00, status: "Cyclonic Storm (Phailin Named)" },
+      { time: 36,  date: "Oct 09, 2013 12:00 UTC", mslp: 988,  wind: 85,  lon: 91.00, lat: 13.10, status: "Severe Cyclonic Storm" },
+      { time: 48,  date: "Oct 10, 2013 00:00 UTC", mslp: 978,  wind: 120, lon: 89.50, lat: 14.20, status: "Very Severe Cyclonic Storm" },
+      { time: 60,  date: "Oct 10, 2013 12:00 UTC", mslp: 960,  wind: 155, lon: 88.00, lat: 15.60, status: "Rapid Intensification" },
+      { time: 72,  date: "Oct 11, 2013 00:00 UTC", mslp: 940,  wind: 215, lon: 86.80, lat: 17.00, status: "Extremely Severe Cyclonic Storm (Cat 5 Eq)" },
+      { time: 84,  date: "Oct 11, 2013 12:00 UTC", mslp: 935,  wind: 230, lon: 85.80, lat: 18.20, status: "Peak Super Cyclone Intensity" },
+      { time: 96,  date: "Oct 12, 2013 00:00 UTC", mslp: 935,  wind: 220, lon: 85.30, lat: 18.90, status: "Approaching Odisha Coast" },
+      { time: 108, date: "Oct 12, 2013 12:00 UTC", mslp: 940,  wind: 215, lon: 84.91, lat: 19.26, status: "Landfall at Gopalpur, Odisha" },
+      { time: 120, date: "Oct 13, 2013 00:00 UTC", mslp: 970,  wind: 120, lon: 84.20, lat: 20.10, status: "Inland Weakening over Odisha" },
     ];
+
+    // Coastal district centroids for navigation and risk proximity
+    this.districtCentroids = {
+      'Ganjam': { lon: 84.69, lat: 19.57, zoom: 8.8 },
+      'Puri': { lon: 85.73, lat: 19.92, zoom: 9.0 },
+      'Khordha': { lon: 85.50, lat: 20.18, zoom: 9.0 },
+      'Jagatsinghpur': { lon: 86.41, lat: 20.17, zoom: 9.0 },
+      'Kendrapara': { lon: 86.63, lat: 20.55, zoom: 9.0 },
+      'Srikakulam': { lon: 84.10, lat: 18.70, zoom: 8.8 },
+    };
 
     this.layersVisible = {
       'stage1-cone':  true,
@@ -563,6 +573,10 @@ class ChakraNetController {
     this.currentFrameIdx = idx;
     const t = this.leadTimes[idx];
 
+    // --- Update storm-eye marker immediately and synchronously (Issue 17 fix) ---
+    // Never wait for async network fetches; marker tracks smoothly at all zoom levels
+    this._updateStormEyeMarker(t);
+
     // --- Update all UI labels synchronously (instant, no wait) ---
     const info = this.leadTimeInfo.find(item => item.time === t);
     if (info) {
@@ -616,8 +630,8 @@ class ChakraNetController {
       return;
     }
 
-    // --- Synchronous block: update BOTH hazard-grid AND storm-eye in same JS task ---
-    // (Issue 1: no setTimeout, no rAF, no debounce — back-to-back setData calls)
+    // --- Synchronous block: update hazard-grid, radius rings, marker & Places at Risk in same JS task ---
+    // (Issue 1 & 17: zero lag frames between grid, storm eye, and impact panel)
 
     // 1. Hazard grid
     if (this.map.getSource('hazard-source') && hazardGeoJSON) {
@@ -627,8 +641,11 @@ class ChakraNetController {
     // 2. 5 km radius rings
     this._updateRadius5kmRings();
 
-    // 3. Storm-eye marker — updated in the same microtask queue flush as the grid
+    // 3. Storm-eye marker — re-synced in the same microtask queue flush as the grid
     this._updateStormEyeMarker(t);
+
+    // 4. Places at Risk panel — live re-sort and re-colour synchronized with hazard footprint
+    this.updatePlacesAtRisk(t, hazardGeoJSON);
   }
 
   /** Updates the top-right legend title to reflect the current threshold (Issue 4 fix) */
@@ -640,7 +657,7 @@ class ChakraNetController {
   }
 
   // -------------------------------------------------------------------------
-  // Storm-eye marker
+  // Storm-eye marker (Issue 17 fix: robust, synchronous, zoom-independent)
   // -------------------------------------------------------------------------
 
   createStormEyeMarker() {
@@ -648,21 +665,197 @@ class ChakraNetController {
     el.className = 'storm-eye-marker';
     el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:#dc2626;' +
       'box-shadow:0 0 0 4px rgba(220,38,38,0.25),0 3px 10px rgba(0,0,0,0.25);' +
-      'border:3px solid #ffffff;cursor:pointer;';
+      'border:3px solid #ffffff;cursor:pointer;z-index:100;';
     el.title = 'Current Storm Eye Position';
+    const initialT = this.leadTimes[this.currentFrameIdx];
+    const initialInfo = this.leadTimeInfo.find(item => item.time === initialT) || this.leadTimeInfo[9];
     this.stormEyeMarker = new maplibregl.Marker({ element: el })
-      .setLngLat([84.91, 19.26])
+      .setLngLat([initialInfo.lon, initialInfo.lat])
       .addTo(this.map);
-    this._updateStormEyeMarker(this.leadTimes[this.currentFrameIdx]);
+    this._updateStormEyeMarker(initialT);
   }
 
   _updateStormEyeMarker(leadTimeHours) {
-    if (!this.stormEyeMarker || !this.trackData) return;
-    const pt = this.trackData.features.find(
-      f => f.properties.layer_type === 'track_point' &&
-           f.properties.lead_time_hours === leadTimeHours
-    );
-    if (pt) this.stormEyeMarker.setLngLat(pt.geometry.coordinates);
+    if (!this.stormEyeMarker) return;
+    const info = this.leadTimeInfo.find(item => item.time === leadTimeHours);
+    if (info && info.lon !== undefined && info.lat !== undefined) {
+      this.stormEyeMarker.setLngLat([info.lon, info.lat]);
+    } else if (this.trackData && this.trackData.features) {
+      const pt = this.trackData.features.find(
+        f => f.properties.layer_type === 'track_point' &&
+             f.properties.lead_time_hours === leadTimeHours
+      );
+      if (pt) this.stormEyeMarker.setLngLat(pt.geometry.coordinates);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Places at Risk Panel (Right Screen Operational Readout)
+  // -------------------------------------------------------------------------
+
+  updatePlacesAtRisk(leadTimeHours, hazardGeoJSON) {
+    const listEl = document.getElementById('risk-places-list');
+    const badgeEl = document.getElementById('risk-count-badge');
+    if (!listEl) return;
+
+    const stormInfo = this.leadTimeInfo.find(item => item.time === leadTimeHours) || { lon: 84.91, lat: 19.26 };
+    const coastalDistricts = [
+      { name: 'Ganjam', lat: 19.38, lon: 84.85, aliases: ['Ganjam'] },
+      { name: 'Puri', lat: 19.82, lon: 85.80, aliases: ['Puri'] },
+      { name: 'Khordha', lat: 20.18, lon: 85.62, aliases: ['Khordha', 'Khurda'] },
+      { name: 'Jagatsinghpur', lat: 20.15, lon: 86.35, aliases: ['Jagatsinghpur'] },
+      { name: 'Kendrapara', lat: 20.50, lon: 86.60, aliases: ['Kendrapara'] },
+      { name: 'Srikakulam', lat: 18.60, lon: 84.15, aliases: ['Srikakulam'] },
+    ];
+
+    // Calm empty state when cyclone is far offshore (T+0h to T+48h, distance > 320 km)
+    const distToGanjam = haversineDistanceKm(stormInfo.lat, stormInfo.lon, 19.38, 84.85);
+    const hasHazardFeatures = hazardGeoJSON && Array.isArray(hazardGeoJSON.features) && hazardGeoJSON.features.length > 0;
+
+    if (!hasHazardFeatures || distToGanjam > 350) {
+      if (badgeEl) badgeEl.textContent = '0';
+      listEl.innerHTML = `
+        <div class="risk-empty-state">
+          <span class="risk-empty-icon">🛡️</span>
+          <div>No coastal districts currently at elevated risk</div>
+          <div style="font-size:0.62rem;color:var(--text-tertiary);margin-top:2px;">
+            Circulation centered offshore in Bay of Bengal (${Math.round(distToGanjam)} km away)
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const ranked = [];
+
+    coastalDistricts.forEach(d => {
+      const dCenter = this.districtCentroids[d.name] || { lon: d.lon, lat: d.lat };
+      const distKm = Math.round(haversineDistanceKm(stormInfo.lat, stormInfo.lon, dCenter.lat, dCenter.lon));
+
+      // Match cells in the 5 km downscaled hazard grid
+      const matchingCells = hazardGeoJSON.features.filter(f => {
+        const dProp = f.properties && f.properties.district;
+        return dProp === d.name || (d.aliases && d.aliases.includes(dProp));
+      });
+
+      let maxProb = 0;
+      let maxRain = 0;
+
+      if (matchingCells.length > 0) {
+        matchingCells.forEach(c => {
+          const p = c.properties.prob_exceed || 0;
+          const r = c.properties.mean_rain_mm || 0;
+          if (p > maxProb) maxProb = p;
+          if (r > maxRain) maxRain = r;
+        });
+      } else if (distKm <= 180) {
+        // Proximity calculation for nearby cells within 45 km radius
+        const nearbyCells = hazardGeoJSON.features.filter(f => {
+          const cLat = f.properties.center_lat;
+          const cLon = f.properties.center_lon;
+          return cLat && cLon && haversineDistanceKm(cLat, cLon, dCenter.lat, dCenter.lon) <= 45;
+        });
+        if (nearbyCells.length > 0) {
+          nearbyCells.forEach(c => {
+            const p = c.properties.prob_exceed || 0;
+            const r = c.properties.mean_rain_mm || 0;
+            if (p > maxProb) maxProb = p;
+            if (r > maxRain) maxRain = r;
+          });
+        }
+      }
+
+      // Only include districts with elevated risk or within direct warning proximity (<= 140 km)
+      if (maxProb < 0.05 && distKm > 140) return;
+
+      let tier = 'Low';
+      let tierScore = 1;
+      let tierClass = 'tag-low';
+      let dotColor = '#0284c7';
+
+      if (maxProb >= 0.88 || (maxProb >= 0.70 && distKm <= 35)) {
+        tier = 'Extreme';
+        tierScore = 5;
+        tierClass = 'tag-extreme';
+        dotColor = '#dc2626';
+      } else if (maxProb >= 0.70 || (maxProb >= 0.50 && distKm <= 60)) {
+        tier = 'Severe';
+        tierScore = 4;
+        tierClass = 'tag-severe';
+        dotColor = '#ea580c';
+      } else if (maxProb >= 0.45 || (maxProb >= 0.30 && distKm <= 90)) {
+        tier = 'High';
+        tierScore = 3;
+        tierClass = 'tag-high';
+        dotColor = '#f59e0b';
+      } else if (maxProb >= 0.20 || distKm <= 120) {
+        tier = 'Moderate';
+        tierScore = 2;
+        tierClass = 'tag-moderate';
+        dotColor = '#16a34a';
+      } else {
+        tier = 'Low';
+        tierScore = 1;
+        tierClass = 'tag-low';
+        dotColor = '#0284c7';
+      }
+
+      ranked.push({
+        name: d.name,
+        tier,
+        tierScore,
+        tierClass,
+        dotColor,
+        maxProb,
+        maxRain,
+        pct: Math.round(maxProb * 100),
+        distKm,
+      });
+    });
+
+    // Sort: highest risk tier first, then by probability descending, then closest distance
+    ranked.sort((a, b) => b.tierScore - a.tierScore || b.maxProb - a.maxProb || a.distKm - b.distKm);
+
+    if (badgeEl) badgeEl.textContent = ranked.length.toString();
+
+    if (ranked.length === 0) {
+      listEl.innerHTML = `
+        <div class="risk-empty-state">
+          <span class="risk-empty-icon">🛡️</span>
+          <div>No coastal districts currently at elevated risk</div>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = ranked.map(item => `
+      <div class="risk-place-row" onclick="app.flyToDistrict('${item.name}')" title="Click to inspect ${item.name} sector">
+        <div class="risk-row-top">
+          <div class="risk-place-name-wrap">
+            <span class="risk-tier-dot" style="background: ${item.dotColor}; box-shadow: 0 0 6px ${item.dotColor};"></span>
+            <span class="risk-place-name">${item.name}</span>
+          </div>
+          <span class="risk-tier-tag ${item.tierClass}">${item.tier}</span>
+        </div>
+        <div class="risk-row-bottom">
+          ${item.pct}% > ${this.currentThreshold}mm · ${item.distKm} km away
+        </div>
+      </div>
+    `).join('');
+  }
+
+  flyToDistrict(name) {
+    const coords = this.districtCentroids[name];
+    if (coords && this.map) {
+      this.map.flyTo({
+        center: [coords.lon, coords.lat],
+        zoom: coords.zoom || 8.8,
+        pitch: this.currentViewMode === '4d' ? 52 : 0,
+        bearing: this.currentViewMode === '4d' ? -12 : 0,
+        duration: 1400,
+        essential: true,
+      });
+    }
   }
 
   // -------------------------------------------------------------------------

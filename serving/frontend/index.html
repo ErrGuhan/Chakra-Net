@@ -314,6 +314,20 @@
       </div>
     </div>
 
+    <!-- New Feature: Right Impact List — Places at Risk Panel -->
+    <div class="places-at-risk-panel" id="places-at-risk-panel" aria-label="Places at Risk Ranked by Hazard Level">
+      <div class="risk-panel-header">
+        <div class="risk-panel-title">
+          <span class="risk-panel-heading">PLACES AT RISK</span>
+          <span class="risk-count-badge" id="risk-count-badge">0</span>
+        </div>
+        <span class="risk-panel-sub">Ranked by Severity</span>
+      </div>
+      <div class="risk-places-list" id="risk-places-list">
+        <!-- Rendered dynamically by app.updatePlacesAtRisk() -->
+      </div>
+    </div>
+
     <!-- Bottom Timeline & Playback Dock -->
     <div class="bottom-dock" id="bottom-dock">
       <div class="dock-header">
@@ -331,13 +345,20 @@
         </div>
       </div>
 
+      <!-- Issue 18: Non-monotonic lifecycle gradient + peak intensity tick -->
       <div style="display: flex; flex-direction: column; gap: 4px;">
-        <input type="range" id="slider-timeline" min="0" max="10" step="1" value="9" class="range-input" oninput="app.onTimelineChange(this.value)" aria-label="Forecast Lead Time Scrubber">
+        <div class="timeline-slider-wrapper">
+          <input type="range" id="slider-timeline" min="0" max="10" step="1" value="9" class="timeline-range-input" oninput="app.onTimelineChange(this.value)" aria-label="Forecast Lead Time Scrubber">
+          <div class="timeline-peak-indicator" title="Peak Cyclone Intensity: 935 hPa / 230 km/h (Category 5)">
+            ▲ Peak Cat 5 (935 hPa)
+          </div>
+        </div>
         <div class="range-ticks" id="timeline-tick-labels">
           <span>T+0h</span>
           <span>T+24h</span>
           <span>T+48h</span>
           <span>T+72h</span>
+          <span class="tick-peak" title="Peak Super Cyclone Intensity (935 hPa)">T+84h ★</span>
           <span>T+96h</span>
           <span>T+120h</span>
         </div>
