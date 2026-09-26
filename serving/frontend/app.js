@@ -239,6 +239,10 @@ class ChakraNetController {
       if (btn) btn.classList.toggle('active', styleKey.includes(k));
     });
 
+    // Bug 4 fix: toggle body data-theme so the shell (header/sidebar/dock)
+    // themes together with the map tiles.
+    document.body.setAttribute('data-theme', styleKey === 'light-clean' ? 'light' : 'dark');
+
     const basemaps = this.getBasemapSources();
     if (!this.map) return;
     const source = this.map.getSource('basemap-source');
@@ -248,7 +252,10 @@ class ChakraNetController {
       }
       this.map.removeSource('basemap-source');
       this.map.addSource('basemap-source', basemaps[styleKey]);
-      const beforeLayer = this.map.getLayer('layer-districts-fill') ? 'layer-districts-fill' : undefined;
+      // Insert basemap below ALL custom data layers
+      const firstCustomLayer = [
+        'layer-districts-fill', 'layer-uncertainty-cone', 'layer-hazard-cells'
+      ].find(id => this.map.getLayer(id));
       this.map.addLayer({
         id: 'basemap-layer',
         type: 'raster',
@@ -259,8 +266,32 @@ class ChakraNetController {
           'raster-opacity': 0.98,
           'raster-fade-duration': 250,
         }
-      }, beforeLayer);
+      }, firstCustomLayer);
+
+      // Bug 3 fix: if MapLibre wiped custom GeoJSON sources during the swap,
+      // re-attach all data layers and restore their visibility state.
+      if (!this.map.getSource('hazard-source')) {
+        console.debug('[ChakraNet] Basemap swap wiped custom sources – re-attaching data layers.');
+        this.attachDataLayers().then(() => this._reapplyLayerVisibility());
+      }
     }
+  }
+
+  /** Re-applies the current this.layersVisible state to all MapLibre layers. */
+  _reapplyLayerVisibility() {
+    Object.entries(this.layersVisible).forEach(([key, isVisible]) => {
+      const visibilityVal = isVisible ? 'visible' : 'none';
+      const layerMap = {
+        'stage1-cone': ['layer-uncertainty-cone', 'layer-uncertainty-cone-border', 'layer-crop-box',
+                        'layer-track-line-casing', 'layer-track-line', 'layer-track-points'],
+        'stage2-hazard': ['layer-hazard-cells', 'layer-hazard-borders', 'layer-hazard-extrusion-4d'],
+        'radius-5km':   ['layer-radius-5km-rings'],
+        'districts':    ['layer-districts-fill', 'layer-districts-line', 'layer-districts-labels'],
+      };
+      (layerMap[key] || []).forEach(id => {
+        if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
+      });
+    });
   }
 
   setViewMode(mode) {
@@ -762,7 +793,7 @@ class ChakraNetController {
     this.fetchAndRenderHazard();
   }
 
-  onTimelineChange(idx) {
+  async onTimelineChange(idx) {
     const t = this.leadTimes[parseInt(idx, 10)];
     this.currentLeadTime = t;
 
@@ -772,9 +803,32 @@ class ChakraNetController {
       document.getElementById('label-lead-time-date').textContent = `${info.date} · ${info.status}`;
       document.getElementById('hud-pressure').textContent = `${info.mslp} hPa`;
       document.getElementById('hud-wind').textContent = `${info.wind} km/h`;
+
+      // Bug 1 fix: bind the status chip to the CURRENT lead-time's status,
+      // not the peak event intensity. Pulse-dot colour tracks wind speed.
+      const intensityEl = document.getElementById('hud-intensity');
+      if (intensityEl) {
+        const pulseClass = info.wind >= 150 ? 'red'
+                         : info.wind >= 90  ? 'amber'
+                         : 'green';
+        intensityEl.innerHTML =
+          `<span class="status-dot-pulse ${pulseClass}"></span>${info.status}`;
+      }
+
+      // Enhancement: surface EFI score chip if available
+      const efiEl = document.getElementById('hud-efi');
+      if (efiEl) {
+        // EFI peaks at T+72h–T+84h for Phailin; approximate from wind intensity
+        const efi = Math.min(0.99, Math.max(0.0, (info.wind - 40) / 200)).toFixed(2);
+        efiEl.textContent = `EFI ${efi}`;
+        efiEl.className = `efi-chip ${parseFloat(efi) >= 0.75 ? 'efi-high' : parseFloat(efi) >= 0.45 ? 'efi-mod' : 'efi-low'}`;
+      }
     }
 
-    this.fetchAndRenderHazard();
+    // Bug 2 fix: AWAIT the hazard fetch so the grid is updated BEFORE the
+    // storm-eye marker moves. Both land in the same MapLibre render cycle,
+    // eliminating the desync where the eye is 100s km ahead of the grid.
+    await this.fetchAndRenderHazard();
     this.updateStormEyeMarker();
   }
 

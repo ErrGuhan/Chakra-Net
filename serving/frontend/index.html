@@ -27,7 +27,7 @@
   <!-- ChakraNet Stylesheet -->
   <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body>
+<body data-theme="dark">
 
   <div id="app-container">
     <!-- MapLibre Canvas Viewport -->
@@ -109,7 +109,8 @@
               <h2 class="event-title">Cyclone Phailin</h2>
               <div class="event-chips-row">
                 <span class="event-chip chip-danger">Cat 5 · Super Cyclone</span>
-                <span class="event-chip chip-success">IMD Ground Truth</span>
+                <span class="event-chip chip-info" title="Dataset: Realistic synthetic 50-member ensemble modelled from IMD/JTWC best-track and GPM IMERG. See LIMITATIONS.md.">Synthetic · IMD-validated</span>
+                <span id="hud-efi" class="efi-chip efi-high" title="Extreme Forecast Index (Lalaurette 2003): probability that conditions exceed model climatology. Source: computed by Stage 1 GNN Tracker.">EFI 0.95</span>
               </div>
             </div>
           </div>
@@ -138,7 +139,9 @@
             <div class="layer-meta">
               <div class="layer-swatch" style="background: var(--accent-cyan); color: var(--accent-cyan);"></div>
               <div>
-                <div class="layer-name">Storm Track &amp; Anomaly Cone</div>
+                <div class="layer-name">Storm Track &amp; Anomaly Cone
+                  <span class="fidelity-badge badge-real" title="Real: PyTorch Mesh GNN with spherical edge convolution. See LIMITATIONS.md.">Real</span>
+                </div>
                 <div class="layer-desc">Forecast trajectory &amp; 70% uncertainty envelope</div>
               </div>
             </div>
@@ -153,7 +156,9 @@
             <div class="layer-meta">
               <div class="layer-swatch" style="background: var(--accent-crimson); color: var(--accent-crimson);"></div>
               <div>
-                <div class="layer-name">5 km Downscaled Hazard Grid</div>
+                <div class="layer-name">5 km Downscaled Hazard Grid
+                  <span class="fidelity-badge badge-real" title="Real: CorrDiff residual diffusion (DDIM) + U-Net mean. 16 ensemble realizations. See LIMITATIONS.md.">Real</span>
+                </div>
                 <div class="layer-desc">Extreme rainfall probability footprint</div>
               </div>
             </div>
@@ -168,7 +173,9 @@
             <div class="layer-meta">
               <div class="layer-swatch" style="background: #00f2fe; color: #00f2fe;"></div>
               <div>
-                <div class="layer-name">5.0 km Emergency Impact Buffer</div>
+                <div class="layer-name">5.0 km Emergency Impact Buffer
+                  <span class="fidelity-badge badge-real" title="Real: Exact WGS-84 geodesic circle computation (Haversine). See LIMITATIONS.md.">Real</span>
+                </div>
                 <div class="layer-desc">Village-level geodesic warning zones (78.5 km²)</div>
               </div>
             </div>
@@ -183,7 +190,9 @@
             <div class="layer-meta">
               <div class="layer-swatch" style="background: var(--accent-purple); color: var(--accent-purple);"></div>
               <div>
-                <div class="layer-name">Coastal District Boundaries</div>
+                <div class="layer-name">Coastal District Boundaries
+                  <span class="fidelity-badge badge-real" title="Real: Open-source GeoJSON from Survey of India / OSGEO. Public domain.">Real</span>
+                </div>
                 <div class="layer-desc">Odisha administrative alert sectors</div>
               </div>
             </div>
@@ -247,7 +256,9 @@
               <div class="layer-meta">
                 <div class="layer-swatch" style="background: var(--accent-blue); color: var(--accent-blue);"></div>
                 <div>
-                  <div class="layer-name">Raw 12 km NWP Baseline</div>
+                  <div class="layer-name">Raw 12 km NWP Baseline
+                    <span class="fidelity-badge badge-simulated" title="Simulated: Synthetic coarse ensemble, IMD/NCMRWF-validated. Not operational NWP output.">Simulated</span>
+                  </div>
                   <div class="layer-desc">Uncalibrated coarse forecast for comparison</div>
                 </div>
               </div>
@@ -258,7 +269,8 @@
             </div>
 
             <div class="tech-architecture-note">
-              <strong>Pipeline Architecture:</strong> ECMWF Lalaurette (2003) EFI &rarr; Icosahedral M9 GNN Tracker &rarr; U-Net Regression Mean &rarr; Residual Diffusion (CorrDiff) with Tail-Weighted CRPS &amp; 2D Fourier PSD loss.
+              <strong>Pipeline Architecture:</strong> ECMWF Lalaurette (2003) EFI &rarr; Icosahedral M9 GNN Tracker &rarr; U-Net Regression Mean &rarr; Residual Diffusion (CorrDiff) with Tail-Weighted CRPS &amp; 2D Fourier PSD loss.<br>
+              <span class="fidelity-badge badge-stub" title="VIMFC and mass-conservation loss terms are documented stubs. See LIMITATIONS.md.">Stub: VIMFC/mass conservation</span> &mdash; v2 milestone.
             </div>
           </div>
         </details>

@@ -2477,3 +2477,159 @@ input:checked + .slider-knob:before {
     border-radius: 9px;
   }
 }
+
+/* ============================================================
+   NEW: Amber status-dot-pulse variant (Bug 1 fix)
+   ============================================================ */
+.status-dot-pulse.amber {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+.status-dot-pulse.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot 2.4s infinite ease-in-out;
+}
+
+/* ============================================================
+   NEW: chip-info variant (Synthetic · IMD-validated chip)
+   ============================================================ */
+.chip-info {
+  background: rgba(99, 102, 241, 0.16);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  cursor: help;
+}
+
+/* ============================================================
+   NEW: EFI Chip (Extreme Forecast Index live readout)
+   ============================================================ */
+.efi-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+  cursor: help;
+  transition: opacity 0.2s;
+}
+
+.efi-high {
+  background: rgba(220, 38, 38, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.40);
+}
+
+.efi-mod {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.40);
+}
+
+.efi-low {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.30);
+}
+
+/* ============================================================
+   NEW: Fidelity badges — Real / Simulated / Stub
+   Surface LIMITATIONS.md matrix directly in the UI.
+   ============================================================ */
+.fidelity-badge {
+  display: inline-block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  cursor: help;
+  position: relative;
+  top: -1px;
+}
+
+.badge-real {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.badge-simulated {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.30);
+}
+
+.badge-stub {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ============================================================
+   NEW: Light-theme shell overrides (Bug 4 fix)
+   Activated by: document.body.setAttribute('data-theme','light')
+   when user switches to the Light Gray Canvas basemap.
+   ============================================================ */
+[data-theme="light"] {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #e4e7ec;
+  --surface-glass: rgba(255, 255, 255, 0.88);
+  --border-subtle: rgba(0, 0, 0, 0.12);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+}
+
+[data-theme="light"] #top-hud {
+  background: rgba(240, 242, 245, 0.92);
+  border-bottom-color: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .sidebar-panel {
+  background: rgba(240, 242, 245, 0.94);
+  border-right-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] .bottom-dock {
+  background: rgba(240, 242, 245, 0.94);
+  border-top-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] .event-info-box,
+[data-theme="light"] .layer-card,
+[data-theme="light"] .quick-stat-card {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] .brand-sub,
+[data-theme="light"] .layer-desc,
+[data-theme="light"] .event-target-desc {
+  color: #475569;
+}
+
+[data-theme="light"] .telemetry-label {
+  color: #64748b;
+}
+
+[data-theme="light"] .telemetry-strip {
+  background: rgba(255, 255, 255, 0.60);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] .event-title,
+[data-theme="light"] .layer-name {
+  color: #0f172a;
+}
+
