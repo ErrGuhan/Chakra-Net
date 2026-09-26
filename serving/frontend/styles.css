@@ -2683,3 +2683,161 @@ input:checked + .slider-knob:before {
   color: #0f172a;
 }
 
+/* ==========================================================================
+   Issue 7 — Layer card single-line row layout (subtitles moved to tooltips)
+   ========================================================================== */
+
+.layer-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ⓘ info icon — shows tooltip on hover instead of always-visible subtitle */
+.layer-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  cursor: help;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.layer-info-icon:hover {
+  color: var(--accent-cyan);
+}
+
+/* layer-desc hidden in normal layer-card (shown only inside details accordion) */
+.layer-card > .layer-meta .layer-desc,
+.layer-card .layer-name-row ~ .layer-desc {
+  display: none;
+}
+
+/* ==========================================================================
+   Issue 6 — STATUS badge pulse variants
+   ========================================================================== */
+
+.status-dot-pulse.amber {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulse-dot 2.2s infinite ease-in-out;
+}
+
+.status-dot-pulse.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot 2.6s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   Issue 4 — Legend head dynamic title style
+   ========================================================================== */
+
+#legend-head-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 0.03em;
+  transition: color 0.25s ease;
+}
+
+/* ==========================================================================
+   Cell hover popup (Issue 4: per-cell probability tooltip)
+   ========================================================================== */
+
+.maplibregl-popup.chakranet-cell-popup .maplibregl-popup-content {
+  background: rgba(10, 16, 30, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  min-width: 180px;
+  pointer-events: none;
+}
+
+.maplibregl-popup.chakranet-cell-popup .maplibregl-popup-tip {
+  border-top-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+.cell-popup-inner strong {
+  font-size: 1.1rem;
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  font-weight: 800;
+}
+
+.popup-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Issue 8 — Light basemap theme shell consistency
+   ========================================================================== */
+
+[data-theme="light"] .sidebar-panel {
+  background: rgba(248, 250, 252, 0.96);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .layer-card {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] .layer-card.active {
+  background: rgba(239, 246, 255, 0.95);
+  border-color: rgba(2, 132, 199, 0.40);
+}
+
+[data-theme="light"] .layer-name-row .layer-name,
+[data-theme="light"] .layer-name {
+  color: #0f172a;
+}
+
+[data-theme="light"] .section-title {
+  color: #475569;
+}
+
+[data-theme="light"] .cam-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #475569;
+}
+
+[data-theme="light"] .cam-btn:hover {
+  background: rgba(2, 132, 199, 0.10);
+  color: #0284c7;
+}
+
+[data-theme="light"] .event-info-box {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="light"] .maplibregl-popup.chakranet-cell-popup .maplibregl-popup-content {
+  background: rgba(248, 250, 252, 0.97);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0f172a;
+}
+
+[data-theme="light"] .cell-popup-inner strong {
+  color: #0284c7;
+}
+
+[data-theme="light"] .popup-sub {
+  color: #475569;
+}
+

@@ -127,22 +127,21 @@
         </div>
       </section>
 
-      <!-- Forecast Pipeline Layers (Simple & Focused on Important Details) -->
+      <!-- Forecast Pipeline Layers (Issue 7: single-line rows, subtitles in tooltips) -->
       <section class="sidebar-section">
         <div class="section-title">
           <span>Forecast Pipeline Layers</span>
         </div>
         <div class="layer-card-group">
-          
+
           <!-- Stage 1 Tracker Cone -->
           <div class="layer-card active" id="card-stage1-cone" onclick="app.toggleLayer('stage1-cone')">
             <div class="layer-meta">
-              <div class="layer-swatch" style="background: var(--accent-cyan); color: var(--accent-cyan);"></div>
-              <div>
-                <div class="layer-name">Storm Track &amp; Anomaly Cone
-                  <span class="fidelity-badge badge-real" title="Real: PyTorch Mesh GNN with spherical edge convolution. See LIMITATIONS.md.">Real</span>
-                </div>
-                <div class="layer-desc">Forecast trajectory &amp; 70% uncertainty envelope</div>
+              <div class="layer-swatch" style="background: var(--accent-cyan);"></div>
+              <div class="layer-name-row">
+                <span class="layer-name">Storm Track &amp; Anomaly Cone</span>
+                <span class="fidelity-badge badge-real">Real</span>
+                <span class="layer-info-icon" title="Forecast trajectory &amp; 70% uncertainty envelope · Real: PyTorch Mesh GNN with spherical edge convolution. See LIMITATIONS.md.">ⓘ</span>
               </div>
             </div>
             <label class="switch" onclick="event.stopPropagation()">
@@ -154,12 +153,11 @@
           <!-- Stage 2 Downscaled Hazard Map -->
           <div class="layer-card active" id="card-stage2-hazard" onclick="app.toggleLayer('stage2-hazard')">
             <div class="layer-meta">
-              <div class="layer-swatch" style="background: var(--accent-crimson); color: var(--accent-crimson);"></div>
-              <div>
-                <div class="layer-name">5 km Downscaled Hazard Grid
-                  <span class="fidelity-badge badge-real" title="Real: CorrDiff residual diffusion (DDIM) + U-Net mean. 16 ensemble realizations. See LIMITATIONS.md.">Real</span>
-                </div>
-                <div class="layer-desc">Extreme rainfall probability footprint</div>
+              <div class="layer-swatch" style="background: var(--accent-crimson);"></div>
+              <div class="layer-name-row">
+                <span class="layer-name">5 km Downscaled Hazard Grid</span>
+                <span class="fidelity-badge badge-real">Real</span>
+                <span class="layer-info-icon" title="Extreme rainfall probability footprint · CorrDiff residual diffusion (DDIM) + U-Net mean. 16 ensemble realizations. See LIMITATIONS.md.">ⓘ</span>
               </div>
             </div>
             <label class="switch" onclick="event.stopPropagation()">
@@ -171,12 +169,11 @@
           <!-- 5.0 km Geodesic Impact Radius Buffer -->
           <div class="layer-card active" id="card-radius-5km" onclick="app.toggleLayer('radius-5km')">
             <div class="layer-meta">
-              <div class="layer-swatch" style="background: #00f2fe; color: #00f2fe;"></div>
-              <div>
-                <div class="layer-name">5.0 km Emergency Impact Buffer
-                  <span class="fidelity-badge badge-real" title="Real: Exact WGS-84 geodesic circle computation (Haversine). See LIMITATIONS.md.">Real</span>
-                </div>
-                <div class="layer-desc">Village-level geodesic warning zones (78.5 km²)</div>
+              <div class="layer-swatch" style="background: #00f2fe;"></div>
+              <div class="layer-name-row">
+                <span class="layer-name">5.0 km Emergency Impact Buffer</span>
+                <span class="fidelity-badge badge-real">Real</span>
+                <span class="layer-info-icon" title="Village-level geodesic warning zones (78.5 km²) · Exact WGS-84 geodesic circle. See LIMITATIONS.md.">ⓘ</span>
               </div>
             </div>
             <label class="switch" onclick="event.stopPropagation()">
@@ -188,12 +185,11 @@
           <!-- Open-Source Coastal District Boundaries -->
           <div class="layer-card active" id="card-districts" onclick="app.toggleLayer('districts')">
             <div class="layer-meta">
-              <div class="layer-swatch" style="background: var(--accent-purple); color: var(--accent-purple);"></div>
-              <div>
-                <div class="layer-name">Coastal District Boundaries
-                  <span class="fidelity-badge badge-real" title="Real: Open-source GeoJSON from Survey of India / OSGEO. Public domain.">Real</span>
-                </div>
-                <div class="layer-desc">Odisha administrative alert sectors</div>
+              <div class="layer-swatch" style="background: var(--accent-purple);"></div>
+              <div class="layer-name-row">
+                <span class="layer-name">Coastal District Boundaries</span>
+                <span class="fidelity-badge badge-real">Real</span>
+                <span class="layer-info-icon" title="Odisha administrative alert sectors · Open-source GeoJSON from Survey of India / OSGEO. Public domain.">ⓘ</span>
               </div>
             </div>
             <label class="switch" onclick="event.stopPropagation()">
@@ -205,33 +201,32 @@
         </div>
       </section>
 
-      <!-- Exceedance Threshold Slider -->
-      <section class="sidebar-section">
-        <div class="threshold-container">
-          <div class="section-title" style="margin-bottom: 2px;">
-            <span>Rainfall Warning Threshold</span>
-            <span id="label-threshold" style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700;">75 mm</span>
-          </div>
-          <input type="range" id="range-threshold" min="35" max="150" step="10" value="75" class="range-input" oninput="app.setThreshold(this.value)" aria-label="Hazard Rainfall Exceedance Threshold">
-          <div class="range-ticks">
-            <span>35 mm (Advisory)</span>
-            <span>75 mm (Warning)</span>
-            <span>150 mm (Extreme)</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Collapsible Technical Specs & Physics Pipeline (Hides Intricate Details by Default) -->
+      <!-- Issue 7: Advanced collapsible section consolidates slider + tech specs -->
       <section class="sidebar-section">
         <details class="tech-specs-accordion" id="tech-specs-drawer">
           <summary class="tech-specs-summary">
             <span class="summary-left">
-              <span class="summary-icon">🔬</span>
-              <span class="summary-title">Technical Specs &amp; Physics Details</span>
+              <span class="summary-icon">⚙️</span>
+              <span class="summary-title">Advanced Controls &amp; Physics Details</span>
             </span>
             <span class="summary-chevron">▾</span>
           </summary>
           <div class="tech-specs-content">
+
+            <!-- Exceedance Threshold Slider (Issue 4: drives legend + grid colour) -->
+            <div class="threshold-container" style="margin-bottom: 12px;">
+              <div class="section-title" style="margin-bottom: 4px; font-size: 0.78rem;">
+                <span>Rainfall Warning Threshold</span>
+                <span id="label-threshold" style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700;">75 mm</span>
+              </div>
+              <input type="range" id="range-threshold" min="35" max="150" step="10" value="75" class="range-input" oninput="app.setThreshold(this.value)" aria-label="Hazard Rainfall Exceedance Threshold">
+              <div class="range-ticks">
+                <span>35 mm</span>
+                <span>75 mm</span>
+                <span>150 mm</span>
+              </div>
+            </div>
+
             <div class="quick-stats-grid">
               <div class="quick-stat-card">
                 <span class="q-label">Raw Ensemble</span>
@@ -254,12 +249,10 @@
             <!-- Stage 0 Raw NWP Baseline Toggle -->
             <div class="layer-card layer-card-subtle" id="card-raw-nwp" onclick="app.toggleLayer('raw-nwp')" style="margin-top: 10px;">
               <div class="layer-meta">
-                <div class="layer-swatch" style="background: var(--accent-blue); color: var(--accent-blue);"></div>
-                <div>
-                  <div class="layer-name">Raw 12 km NWP Baseline
-                    <span class="fidelity-badge badge-simulated" title="Simulated: Synthetic coarse ensemble, IMD/NCMRWF-validated. Not operational NWP output.">Simulated</span>
-                  </div>
-                  <div class="layer-desc">Uncalibrated coarse forecast for comparison</div>
+                <div class="layer-swatch" style="background: var(--accent-blue);"></div>
+                <div class="layer-name-row">
+                  <span class="layer-name">Raw 12 km NWP Baseline</span>
+                  <span class="fidelity-badge badge-simulated" title="Simulated: Synthetic coarse ensemble, IMD/NCMRWF-validated. Not operational NWP output.">Simulated</span>
                 </div>
               </div>
               <label class="switch" onclick="event.stopPropagation()">
@@ -269,7 +262,7 @@
             </div>
 
             <div class="tech-architecture-note">
-              <strong>Pipeline Architecture:</strong> ECMWF Lalaurette (2003) EFI &rarr; Icosahedral M9 GNN Tracker &rarr; U-Net Regression Mean &rarr; Residual Diffusion (CorrDiff) with Tail-Weighted CRPS &amp; 2D Fourier PSD loss.<br>
+              <strong>Pipeline:</strong> EFI &rarr; M9 GNN &rarr; U-Net &rarr; CorrDiff DDIM (16 members) &rarr; CAP 1.2<br>
               <span class="fidelity-badge badge-stub" title="VIMFC and mass-conservation loss terms are documented stubs. See LIMITATIONS.md.">Stub: VIMFC/mass conservation</span> &mdash; v2 milestone.
             </div>
           </div>
@@ -278,17 +271,18 @@
 
     </aside>
 
-    <!-- Scientific Discrete Risk Color Legend -->
+    <!-- Issue 4 fix: single legend with dynamic title driven by threshold slider -->
     <div class="scientific-legend" id="map-legend">
       <div class="legend-header">
-        <span class="legend-head">Rainfall Hazard Risk</span>
+        <!-- Title updated live by app.js _updateLegendTitle() -->
+        <span class="legend-head" id="legend-head-title">P(Rainfall &gt; 75 mm)</span>
       </div>
       <div class="legend-bar-continuous">
-        <div class="legend-seg seg-low" title="0% - 25% (Low Risk)"></div>
-        <div class="legend-seg seg-mod" title="25% - 50% (Moderate Risk)"></div>
-        <div class="legend-seg seg-high" title="50% - 75% (High Risk)"></div>
-        <div class="legend-seg seg-severe" title="75% - 90% (Severe Risk)"></div>
-        <div class="legend-seg seg-extreme" title="90% - 100% (Extreme Risk)"></div>
+        <div class="legend-seg seg-low" title="0% – 25% · Low Risk"></div>
+        <div class="legend-seg seg-mod" title="25% – 50% · Moderate Risk"></div>
+        <div class="legend-seg seg-high" title="50% – 75% · High Risk"></div>
+        <div class="legend-seg seg-severe" title="75% – 90% · Severe Risk"></div>
+        <div class="legend-seg seg-extreme" title="90% – 100% · Extreme Risk"></div>
       </div>
       <div class="legend-ticks">
         <span>0%</span>
