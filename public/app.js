@@ -1,9 +1,28 @@
 /**
  * ChakraNet Frontend Application Controller
  * 4D Spatiotemporal Volumetric Extrusions · Accurate 5 km Geodesic Radius · OASIS CAP 1.2
+ *
+ * Fix log (applied in order per remediation prompt):
+ *  Issue 1  — Single applyFrame(idx) is the ONLY place that mutates map state for a
+ *             given timeline frame. Uses AbortController to cancel stale in-flight fetches
+ *             so rapid scrubs never produce a desync between the hazard-grid and the
+ *             storm-eye marker.
+ *  Issue 2  — map.on('style.load', ...) re-attaches all custom sources/layers after any
+ *             basemap switch (MapLibre tears down GeoJSON sources on setStyle).
+ *  Issue 4  — One legend only. The top-right legend title updates live as the mm-threshold
+ *             slider moves (P(rainfall > Xmm)). The slider onChange re-triggers applyFrame
+ *             so the hazard-grid colours change immediately.
+ *  Issue 5  — Hazard fill and grid-line border are consolidated into a single 'fill' layer
+ *             using fill-outline-color. The separate 'layer-hazard-borders' line layer is
+ *             removed to eliminate z-fighting and crosshatch artefacts.
+ *  Issue 6  — STATUS badge (hud-intensity) is bound to frames[currentFrameIndex].status
+ *             inside applyFrame, not to a static peak-classification string.
  */
 
-// Geodesic distance formula (WGS-84 sphere approximation)
+// ---------------------------------------------------------------------------
+// Geodesic helpers
+// ---------------------------------------------------------------------------
+
 function haversineDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371.009;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -11,17 +30,14 @@ function haversineDistanceKm(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c * 10) / 10;
+  return Math.round(6371.009 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
 }
 
-// Exact WGS-84 geodesic circle generator for true 5.0 km radius on Earth surface
 function createGeodesicCircle(centerLng, centerLat, radiusKm = 5.0, points = 64) {
   const coords = [];
   const d = radiusKm / 6371.009;
   const latRad = centerLat * Math.PI / 180;
   const lngRad = centerLng * Math.PI / 180;
-
   for (let i = 0; i <= points; i++) {
     const bearing = (i * 360 / points) * Math.PI / 180;
     const pLat = Math.asin(
@@ -39,14 +55,18 @@ function createGeodesicCircle(centerLng, centerLat, radiusKm = 5.0, points = 64)
   return coords;
 }
 
+// ---------------------------------------------------------------------------
+// Main controller
+// ---------------------------------------------------------------------------
+
 class ChakraNetController {
   constructor() {
     this.map = null;
-    this.currentBasemap = 'dark-tactical'; // Tactical dark command center theme default
-    this.currentViewMode = '4d';        // 4D Volumetric View default
-    this.currentLeadTime = 108;         // Landfall T+108h default
-    this.currentThreshold = 75;         // 75 mm/24h default
-    this.playbackSpeed = 1;             // 1x speed
+    this.currentBasemap = 'dark-tactical';
+    this.currentViewMode = '4d';
+    this.currentFrameIdx = 9;        // corresponds to T+108h default
+    this.currentThreshold = 75;
+    this.playbackSpeed = 1;
     this.isPlaying = false;
     this.playTimer = null;
     this.activeAlertTab = 'en';
@@ -54,35 +74,45 @@ class ChakraNetController {
     this.stormEyeMarker = null;
     this.isSidebarOpen = true;
 
+    // In-flight fetch cancellation (Issue 1 fix)
+    this._hazardAbortCtrl = null;
+
     this.leadTimes = [0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120];
+
+    // Cached API data
     this.trackData = null;
     this.hazardData = null;
     this.districtsData = null;
 
+    // Per-frame metadata — drives STATUS badge, pressure, wind, EFI (Issue 6 fix)
     this.leadTimeInfo = [
-      { time: 0, date: "Oct 08, 2013 00:00 UTC", mslp: 1002, wind: 45, status: "Depression (Andaman Sea)" },
-      { time: 12, date: "Oct 08, 2013 12:00 UTC", mslp: 998, wind: 55, status: "Deep Depression" },
-      { time: 24, date: "Oct 09, 2013 00:00 UTC", mslp: 994, wind: 65, status: "Cyclonic Storm (Phailin Named)" },
-      { time: 36, date: "Oct 09, 2013 12:00 UTC", mslp: 988, wind: 85, status: "Severe Cyclonic Storm" },
-      { time: 48, date: "Oct 10, 2013 00:00 UTC", mslp: 978, wind: 120, status: "Very Severe Cyclonic Storm" },
-      { time: 60, date: "Oct 10, 2013 12:00 UTC", mslp: 960, wind: 155, status: "Rapid Intensification" },
-      { time: 72, date: "Oct 11, 2013 00:00 UTC", mslp: 940, wind: 215, status: "Extremely Severe Cyclonic Storm (Cat 5 Eq)" },
-      { time: 84, date: "Oct 11, 2013 12:00 UTC", mslp: 935, wind: 230, status: "Peak Super Cyclone Intensity" },
-      { time: 96, date: "Oct 12, 2013 00:00 UTC", mslp: 935, wind: 220, status: "Approaching Odisha Coast" },
-      { time: 108, date: "Oct 12, 2013 12:00 UTC", mslp: 940, wind: 215, status: "Landfall at Gopalpur, Odisha" },
-      { time: 120, date: "Oct 13, 2013 00:00 UTC", mslp: 970, wind: 120, status: "Inland Weakening over Odisha" }
+      { time: 0,   date: "Oct 08, 2013 00:00 UTC", mslp: 1002, wind: 45,  status: "Depression (Andaman Sea)" },
+      { time: 12,  date: "Oct 08, 2013 12:00 UTC", mslp: 998,  wind: 55,  status: "Deep Depression" },
+      { time: 24,  date: "Oct 09, 2013 00:00 UTC", mslp: 994,  wind: 65,  status: "Cyclonic Storm (Phailin Named)" },
+      { time: 36,  date: "Oct 09, 2013 12:00 UTC", mslp: 988,  wind: 85,  status: "Severe Cyclonic Storm" },
+      { time: 48,  date: "Oct 10, 2013 00:00 UTC", mslp: 978,  wind: 120, status: "Very Severe Cyclonic Storm" },
+      { time: 60,  date: "Oct 10, 2013 12:00 UTC", mslp: 960,  wind: 155, status: "Rapid Intensification" },
+      { time: 72,  date: "Oct 11, 2013 00:00 UTC", mslp: 940,  wind: 215, status: "Extremely Severe Cyclonic Storm (Cat 5 Eq)" },
+      { time: 84,  date: "Oct 11, 2013 12:00 UTC", mslp: 935,  wind: 230, status: "Peak Super Cyclone Intensity" },
+      { time: 96,  date: "Oct 12, 2013 00:00 UTC", mslp: 935,  wind: 220, status: "Approaching Odisha Coast" },
+      { time: 108, date: "Oct 12, 2013 12:00 UTC", mslp: 940,  wind: 215, status: "Landfall at Gopalpur, Odisha" },
+      { time: 120, date: "Oct 13, 2013 00:00 UTC", mslp: 970,  wind: 120, status: "Inland Weakening over Odisha" },
     ];
 
     this.layersVisible = {
-      'stage1-cone': true,
+      'stage1-cone':  true,
       'stage2-hazard': true,
-      'radius-5km': true,
-      'districts': true,
-      'raw-nwp': false,
+      'radius-5km':   true,
+      'districts':    true,
+      'raw-nwp':      false,
     };
 
     this.init();
   }
+
+  // -------------------------------------------------------------------------
+  // Init
+  // -------------------------------------------------------------------------
 
   init() {
     this.initMap();
@@ -97,10 +127,7 @@ class ChakraNetController {
         const el = document.getElementById('hud-db-val');
         if (el) {
           const latency = data.latency_ms ? `${data.latency_ms}ms` : '14ms';
-          if (data.connected && data.schema_ready) {
-            el.innerHTML = `<span class="status-dot online"></span> ⚡ Supabase (${latency})`;
-            el.className = 'telemetry-value text-success';
-          } else if (data.connected) {
+          if (data.connected) {
             el.innerHTML = `<span class="status-dot online"></span> ⚡ Supabase (${latency})`;
             el.className = 'telemetry-value text-success';
           } else {
@@ -109,7 +136,7 @@ class ChakraNetController {
           }
           const statusBox = document.getElementById('hud-db-status');
           if (statusBox) {
-            statusBox.title = `Supabase PostgreSQL: ${data.supabase_url || 'https://uuaacphwlyekeaixiqty.supabase.co'} · Mode: ${data.active_mode || 'Live'} (Click to inspect)`;
+            statusBox.title = `Supabase PostgreSQL: ${data.supabase_url || ''} · Mode: ${data.active_mode || 'Live'}`;
           }
         }
       }
@@ -118,181 +145,230 @@ class ChakraNetController {
     }
   }
 
-  toggleSidebar() {
-    this.isSidebarOpen = !this.isSidebarOpen;
-    const sidebar = document.getElementById('control-sidebar');
-    const bottomDock = document.getElementById('bottom-dock');
-    const btn = document.getElementById('sidebar-toggle-btn');
-    if (sidebar) {
-      sidebar.classList.toggle('collapsed', !this.isSidebarOpen);
-    }
-    if (bottomDock) {
-      bottomDock.classList.toggle('expanded-left', !this.isSidebarOpen);
-    }
-    if (btn) {
-      btn.classList.toggle('active', this.isSidebarOpen);
-    }
-    setTimeout(() => { if (this.map) this.map.resize(); }, 300);
-  }
+  // -------------------------------------------------------------------------
+  // Map initialisation
+  // -------------------------------------------------------------------------
 
-  getBasemapSources() {
-    return {
+  getBasemapSource(styleKey) {
+    const sources = {
       'dark-tactical': {
         type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-        ],
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
         tileSize: 256,
         attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
       },
       'google-satellite': {
         type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        ],
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
         tileSize: 256,
-        attribution: '&copy; Esri, Maxar, Earthstar Geographics, USDA, USGS',
+        attribution: '&copy; Esri, Maxar, Earthstar Geographics',
       },
       'google-terrain': {
         type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
-        ],
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}'],
         tileSize: 256,
-        attribution: '&copy; Esri, GEBCO, NOAA, National Geographic',
+        attribution: '&copy; Esri, GEBCO, NOAA',
       },
       'light-clean': {
         type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-        ],
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
         tileSize: 256,
         attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
       },
       'osm': {
         type: 'raster',
-        tiles: [
-          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        ],
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         tileSize: 256,
         attribution: '&copy; OpenStreetMap contributors',
-      }
+      },
     };
+    return sources[styleKey] || sources['dark-tactical'];
   }
 
   initMap() {
-    const basemaps = this.getBasemapSources();
-
     this.map = new maplibregl.Map({
       container: 'map-view',
       style: {
         version: 8,
         glyphs: "https://cdn.jsdelivr.net/gh/openmaptiles/fonts@gh-pages/{fontstack}/{range}.pbf",
-        sources: {
-          'basemap-source': basemaps[this.currentBasemap],
-        },
-        layers: [
-          {
-            id: 'basemap-layer',
-            type: 'raster',
-            source: 'basemap-source',
-            minzoom: 0,
-            maxzoom: 19,
-            paint: {
-              'raster-opacity': 0.98,
-              'raster-fade-duration': 250,
-            }
-          }
-        ]
+        sources: { 'basemap-source': this.getBasemapSource(this.currentBasemap) },
+        layers: [{
+          id: 'basemap-layer',
+          type: 'raster',
+          source: 'basemap-source',
+          minzoom: 0,
+          maxzoom: 19,
+          paint: { 'raster-opacity': 0.98, 'raster-fade-duration': 250 }
+        }]
       },
-      center: [85.8, 18.8], // Centered on Bay of Bengal and Odisha Landfall Sector
-      zoom: 6.6,
-      pitch: 56,           // 4D Volumetric 3D Perspective default
-      bearing: -14,        // Oriented along Phailin's approach corridor
+      center: [86.2, 17.5],
+      zoom: 6.4,
+      pitch: 54,
+      bearing: -12,
     });
 
     this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     this.map.on('load', () => {
-      // 3D Directional Lighting for 4D extruded convective columns
       if (this.map.setLight) {
-        this.map.setLight({
-          anchor: 'viewport',
-          color: '#ffffff',
-          intensity: 0.45,
-          position: [1.5, 180, 45]
-        });
+        this.map.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.45, position: [1.5, 180, 45] });
       }
-
-      this.attachDataLayers();
+      this._addAllChakraNetLayers().then(() => {
+        // Issue 15 fix: Fit camera bounds so cyclone track & hazard grid dominate the screen
+        this.fitBoundsToEvent(false);
+      });
       this.bindInteractions();
       this.createStormEyeMarker();
     });
+
+    // Close basemap dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('basemap-dropdown-container');
+      if (container && container.classList.contains('open') && !container.contains(e.target)) {
+        container.classList.remove('open');
+        const btn = document.getElementById('btn-basemap-dropdown');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Issue 2 fix: re-inject all custom layers after ANY style swap (basemap switch).
+    // MapLibre GL tears down GeoJSON sources when a new style loads.
+    this.map.on('style.load', () => {
+      if (!this.map.getSource('hazard-source')) {
+        console.debug('[ChakraNet] style.load: re-attaching custom data layers.');
+        this._addAllChakraNetLayers().then(() => {
+          this._reapplyLayerVisibility();
+          this.applyFrame(this.currentFrameIdx);
+        });
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Issue 15 fix: camera bounds calculation ensuring storm dominates viewport
+  // -------------------------------------------------------------------------
+
+  fitBoundsToEvent(smooth = false) {
+    if (!this.map) return;
+    const isDesktop = window.innerWidth > 1024;
+    const leftPad = isDesktop && this.isSidebarOpen ? 370 : 40;
+
+    // Geographic bounds enclosing Bay of Bengal track, Andaman genesis, and coastal Odisha
+    const bounds = [
+      [82.6, 10.2], // SW coordinates [lon, lat]
+      [93.8, 21.6]  // NE coordinates [lon, lat]
+    ];
+
+    const cameraOptions = {
+      padding: { top: 85, bottom: 120, left: leftPad, right: 60 },
+      maxZoom: 7.2,
+      duration: smooth ? 1600 : 0,
+      essential: true
+    };
+
+    if (this.currentViewMode === '4d') {
+      cameraOptions.pitch = 54;
+      cameraOptions.bearing = -12;
+    } else {
+      cameraOptions.pitch = 0;
+      cameraOptions.bearing = 0;
+    }
+
+    this.map.fitBounds(bounds, cameraOptions);
+  }
+
+  // -------------------------------------------------------------------------
+  // Issue 2 fix: named function wrapping ALL custom layer/source setup
+  // -------------------------------------------------------------------------
+
+  async _addAllChakraNetLayers() {
+    await this.fetchAndRenderDistricts();
+    await this.fetchAndRenderTrack();
+    await this.fetchAndRenderHazardSources();  // sets up sources+layers only
+  }
+
+  // -------------------------------------------------------------------------
+  // Basemap switching & Dropdown Handling (Issue 13 fix)
+  // -------------------------------------------------------------------------
+
+  toggleBasemapDropdown(e) {
+    if (e) e.stopPropagation();
+    const container = document.getElementById('basemap-dropdown-container');
+    if (container) {
+      const isOpen = container.classList.toggle('open');
+      const btn = document.getElementById('btn-basemap-dropdown');
+      if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  }
+
+  selectBasemap(styleKey, labelText, e) {
+    if (e) e.stopPropagation();
+    this.setBasemap(styleKey);
+    const labelEl = document.getElementById('label-current-basemap');
+    if (labelEl && labelText) labelEl.textContent = labelText;
+    const container = document.getElementById('basemap-dropdown-container');
+    if (container) container.classList.remove('open');
+    const btn = document.getElementById('btn-basemap-dropdown');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 
   setBasemap(styleKey) {
     if (this.currentBasemap === styleKey) return;
     this.currentBasemap = styleKey;
 
+    const basemapLabels = {
+      'dark-tactical': '🌑 Dark',
+      'google-satellite': '🛰️ Sat',
+      'google-terrain': '🌊 Ocean',
+      'light-clean': '☀️ Light',
+      'osm': '🗺️ OSM'
+    };
+
+    const labelEl = document.getElementById('label-current-basemap');
+    if (labelEl && basemapLabels[styleKey]) {
+      labelEl.textContent = basemapLabels[styleKey];
+    }
+
     ['dark', 'satellite', 'terrain', 'light', 'osm'].forEach(k => {
       const btn = document.getElementById(`btn-bm-${k}`);
       if (btn) btn.classList.toggle('active', styleKey.includes(k));
     });
 
-    // Bug 4 fix: toggle body data-theme so the shell (header/sidebar/dock)
-    // themes together with the map tiles.
+    // Issue 8 fix: sync shell theme with basemap
     document.body.setAttribute('data-theme', styleKey === 'light-clean' ? 'light' : 'dark');
 
-    const basemaps = this.getBasemapSources();
     if (!this.map) return;
-    const source = this.map.getSource('basemap-source');
-    if (source) {
-      if (this.map.getLayer('basemap-layer')) {
-        this.map.removeLayer('basemap-layer');
-      }
-      this.map.removeSource('basemap-source');
-      this.map.addSource('basemap-source', basemaps[styleKey]);
-      // Insert basemap below ALL custom data layers
-      const firstCustomLayer = [
-        'layer-districts-fill', 'layer-uncertainty-cone', 'layer-hazard-cells'
-      ].find(id => this.map.getLayer(id));
-      this.map.addLayer({
-        id: 'basemap-layer',
-        type: 'raster',
-        source: 'basemap-source',
-        minzoom: 0,
-        maxzoom: 19,
-        paint: {
-          'raster-opacity': 0.98,
-          'raster-fade-duration': 250,
-        }
-      }, firstCustomLayer);
 
-      // Bug 3 fix: if MapLibre wiped custom GeoJSON sources during the swap,
-      // re-attach all data layers and restore their visibility state.
-      if (!this.map.getSource('hazard-source')) {
-        console.debug('[ChakraNet] Basemap swap wiped custom sources – re-attaching data layers.');
-        this.attachDataLayers().then(() => this._reapplyLayerVisibility());
-      }
+    // Swap the raster basemap source under all existing custom layers
+    if (this.map.getLayer('basemap-layer')) this.map.removeLayer('basemap-layer');
+    if (this.map.getSource('basemap-source')) this.map.removeSource('basemap-source');
+
+    this.map.addSource('basemap-source', this.getBasemapSource(styleKey));
+
+    // Insert basemap BELOW the first custom data layer
+    const firstCustomLayer = [
+      'layer-districts-fill', 'layer-uncertainty-cone', 'layer-hazard-cells'
+    ].find(id => this.map.getLayer(id));
+
+    this.map.addLayer({
+      id: 'basemap-layer',
+      type: 'raster',
+      source: 'basemap-source',
+      minzoom: 0,
+      maxzoom: 19,
+      paint: { 'raster-opacity': 0.98, 'raster-fade-duration': 250 }
+    }, firstCustomLayer);
+
+    // If custom sources survived the swap (typical case), just reapply frame data.
+    // If they were wiped, style.load event handler above will re-attach them.
+    if (this.map.getSource('hazard-source')) {
+      this.applyFrame(this.currentFrameIdx);
     }
   }
 
-  /** Re-applies the current this.layersVisible state to all MapLibre layers. */
-  _reapplyLayerVisibility() {
-    Object.entries(this.layersVisible).forEach(([key, isVisible]) => {
-      const visibilityVal = isVisible ? 'visible' : 'none';
-      const layerMap = {
-        'stage1-cone': ['layer-uncertainty-cone', 'layer-uncertainty-cone-border', 'layer-crop-box',
-                        'layer-track-line-casing', 'layer-track-line', 'layer-track-points'],
-        'stage2-hazard': ['layer-hazard-cells', 'layer-hazard-borders', 'layer-hazard-extrusion-4d'],
-        'radius-5km':   ['layer-radius-5km-rings'],
-        'districts':    ['layer-districts-fill', 'layer-districts-line', 'layer-districts-labels'],
-      };
-      (layerMap[key] || []).forEach(id => {
-        if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
-      });
-    });
-  }
+  // -------------------------------------------------------------------------
+  // View mode (2D / 4D)
+  // -------------------------------------------------------------------------
 
   setViewMode(mode) {
     if (this.currentViewMode === mode) return;
@@ -304,105 +380,56 @@ class ChakraNetController {
     if (btn4d) btn4d.classList.toggle('active', mode === '4d');
 
     if (mode === '4d') {
-      this.map.easeTo({
-        pitch: 58,
-        bearing: -14,
-        duration: 1200,
-        essential: true,
-      });
-      if (this.map.getLayer('layer-hazard-extrusion-4d')) {
+      this.map.easeTo({ pitch: 58, bearing: -14, duration: 1200, essential: true });
+      if (this.map.getLayer('layer-hazard-extrusion-4d'))
         this.map.setPaintProperty('layer-hazard-extrusion-4d', 'fill-extrusion-opacity', 0.88);
-      }
-      if (this.map.getLayer('layer-hazard-cells')) {
+      if (this.map.getLayer('layer-hazard-cells'))
         this.map.setPaintProperty('layer-hazard-cells', 'fill-opacity', 0.22);
-      }
-      if (this.map.getLayer('layer-selected-5km-extrusion')) {
+      if (this.map.getLayer('layer-selected-5km-extrusion'))
         this.map.setPaintProperty('layer-selected-5km-extrusion', 'fill-extrusion-opacity', 0.45);
-      }
     } else {
-      this.map.easeTo({
-        pitch: 0,
-        bearing: 0,
-        duration: 1000,
-        essential: true,
-      });
-      if (this.map.getLayer('layer-hazard-extrusion-4d')) {
+      this.map.easeTo({ pitch: 0, bearing: 0, duration: 1000, essential: true });
+      if (this.map.getLayer('layer-hazard-extrusion-4d'))
         this.map.setPaintProperty('layer-hazard-extrusion-4d', 'fill-extrusion-opacity', 0);
-      }
-      if (this.map.getLayer('layer-hazard-cells')) {
+      if (this.map.getLayer('layer-hazard-cells'))
         this.map.setPaintProperty('layer-hazard-cells', 'fill-opacity', 0.85);
-      }
-      if (this.map.getLayer('layer-selected-5km-extrusion')) {
+      if (this.map.getLayer('layer-selected-5km-extrusion'))
         this.map.setPaintProperty('layer-selected-5km-extrusion', 'fill-extrusion-opacity', 0);
-      }
     }
   }
 
-  async attachDataLayers() {
-    await this.fetchAndRenderDistricts();
-    await this.fetchAndRenderTrack();
-    await this.fetchAndRenderHazard();
-  }
+  // -------------------------------------------------------------------------
+  // Layer setup helpers (sources + layer definitions, no data loading)
+  // -------------------------------------------------------------------------
 
   async fetchAndRenderDistricts() {
     try {
       const res = await fetch('/events/phailin_2013/districts');
       this.districtsData = await res.json();
-
       if (this.map.getSource('districts-source')) {
         this.map.getSource('districts-source').setData(this.districtsData);
         return;
       }
-
-      this.map.addSource('districts-source', {
-        type: 'geojson',
-        data: this.districtsData,
-      });
-
-      // 1. Shaded Coastal Vulnerability Fill
-      this.map.addLayer({
-        id: 'layer-districts-fill',
-        type: 'fill',
-        source: 'districts-source',
-        paint: {
-          'fill-color': '#4f46e5',
-          'fill-opacity': 0.08,
-        }
-      });
-
-      // 2. High-precision Vector Boundary Lines
-      this.map.addLayer({
-        id: 'layer-districts-line',
-        type: 'line',
-        source: 'districts-source',
-        paint: {
-          'line-color': '#6366f1',
-          'line-width': 1.6,
-          'line-dasharray': [3, 2],
-          'line-opacity': 0.85,
-        }
-      });
-
-      // 3. District Labels with high-contrast halo
-      this.map.addLayer({
-        id: 'layer-districts-labels',
-        type: 'symbol',
-        source: 'districts-source',
+      this.map.addSource('districts-source', { type: 'geojson', data: this.districtsData });
+      this.map.addLayer({ id: 'layer-districts-fill', type: 'fill', source: 'districts-source',
+        paint: { 'fill-color': '#4f46e5', 'fill-opacity': 0.08 } });
+      this.map.addLayer({ id: 'layer-districts-line', type: 'line', source: 'districts-source',
+        paint: { 'line-color': '#6366f1', 'line-width': 1.6, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } });
+      
+      // Issue 16 fix: High contrast text-halo ensures district & state names remain legible across bounding lines
+      this.map.addLayer({ id: 'layer-districts-labels', type: 'symbol', source: 'districts-source',
         layout: {
           'text-field': ['coalesce', ['get', 'district'], ['get', 'name']],
-          'text-font': ['Open Sans Regular'],
-          'text-size': 11.5,
-          'text-offset': [0, 0.5],
-          'text-anchor': 'center',
-          'text-allow-overlap': false,
+          'text-font': ['Open Sans Regular'], 'text-size': 11.5,
+          'text-offset': [0, 0.5], 'text-anchor': 'center', 'text-allow-overlap': false,
         },
         paint: {
           'text-color': '#f8fafc',
           'text-halo-color': '#070b14',
-          'text-halo-width': 2.5,
+          'text-halo-width': 3.5,
+          'text-halo-blur': 0.5
         }
       });
-
     } catch (err) {
       console.error('Failed to load district boundaries:', err);
     }
@@ -412,342 +439,271 @@ class ChakraNetController {
     try {
       const res = await fetch('/events/phailin_2013/track');
       this.trackData = await res.json();
-
       if (this.map.getSource('track-source')) {
         this.map.getSource('track-source').setData(this.trackData);
-        this.updateStormEyeMarker();
         return;
       }
+      this.map.addSource('track-source', { type: 'geojson', data: this.trackData });
 
-      this.map.addSource('track-source', {
-        type: 'geojson',
-        data: this.trackData,
-      });
-
-      // Uncertainty Cone (Clean Soft Sky Cerulean)
-      this.map.addLayer({
-        id: 'layer-uncertainty-cone',
-        type: 'fill',
-        source: 'track-source',
+      this.map.addLayer({ id: 'layer-uncertainty-cone', type: 'fill', source: 'track-source',
         filter: ['==', 'layer_type', 'uncertainty_cone'],
-        paint: {
-          'fill-color': '#0284c7',
-          'fill-opacity': 0.18,
-        }
-      });
-
-      // Uncertainty Cone Boundary
-      this.map.addLayer({
-        id: 'layer-uncertainty-cone-border',
-        type: 'line',
-        source: 'track-source',
+        paint: { 'fill-color': '#0284c7', 'fill-opacity': 0.18 } });
+      this.map.addLayer({ id: 'layer-uncertainty-cone-border', type: 'line', source: 'track-source',
         filter: ['==', 'layer_type', 'uncertainty_cone'],
-        paint: {
-          'line-color': '#0284c7',
-          'line-width': 2.0,
-          'line-opacity': 0.85,
-          'line-dasharray': [3, 2],
-        }
-      });
-
-      // Stage 1 Crop Bounding Box (4D Spatiotemporal Extent)
-      this.map.addLayer({
-        id: 'layer-crop-box',
-        type: 'line',
-        source: 'track-source',
+        paint: { 'line-color': '#0284c7', 'line-width': 2.0, 'line-opacity': 0.85, 'line-dasharray': [3, 2] } });
+      this.map.addLayer({ id: 'layer-crop-box', type: 'line', source: 'track-source',
         filter: ['==', 'layer_type', 'stage1_crop_box'],
-        paint: {
-          'line-color': '#059669',
-          'line-width': 2.2,
-          'line-dasharray': [4, 3],
-          'line-opacity': 0.9,
-        }
-      });
-
-      // Best Track Line Casing
-      this.map.addLayer({
-        id: 'layer-track-line-casing',
-        type: 'line',
-        source: 'track-source',
+        paint: { 'line-color': '#059669', 'line-width': 2.2, 'line-dasharray': [4, 3], 'line-opacity': 0.9 } });
+      this.map.addLayer({ id: 'layer-track-line-casing', type: 'line', source: 'track-source',
         filter: ['==', 'layer_type', 'best_track_line'],
-        paint: {
-          'line-color': '#070b14',
-          'line-width': 5.5,
-          'line-opacity': 0.95,
-        }
-      });
-
-      // Best Track Line
-      this.map.addLayer({
-        id: 'layer-track-line',
-        type: 'line',
-        source: 'track-source',
+        paint: { 'line-color': '#070b14', 'line-width': 5.5, 'line-opacity': 0.95 } });
+      this.map.addLayer({ id: 'layer-track-line', type: 'line', source: 'track-source',
         filter: ['==', 'layer_type', 'best_track_line'],
-        paint: {
-          'line-color': '#00f2fe',
-          'line-width': 3.2,
-          'line-opacity': 1.0,
-        }
-      });
-
-      // Track Centroid Points
-      this.map.addLayer({
-        id: 'layer-track-points',
-        type: 'circle',
-        source: 'track-source',
+        paint: { 'line-color': '#00f2fe', 'line-width': 3.2, 'line-opacity': 1.0 } });
+      this.map.addLayer({ id: 'layer-track-points', type: 'circle', source: 'track-source',
         filter: ['==', 'layer_type', 'track_point'],
-        paint: {
-          'circle-radius': 5.5,
-          'circle-color': '#ef4444',
-          'circle-stroke-color': '#070b14',
-          'circle-stroke-width': 2.5,
-        }
-      });
-
+        paint: { 'circle-radius': 5.5, 'circle-color': '#ef4444', 'circle-stroke-color': '#070b14', 'circle-stroke-width': 2.5 } });
     } catch (err) {
       console.error('Failed to load track data:', err);
     }
   }
 
-  async fetchAndRenderHazard() {
-    try {
-      const url = `/events/phailin_2013/hazard-map?lead_time=${this.currentLeadTime}&threshold_mm=${this.currentThreshold}`;
-      const res = await fetch(url);
-      this.hazardData = await res.json();
+  /**
+   * Issue 5 fix: sets up the hazard-grid sources and layer definitions only.
+   * Data is NOT loaded here — call applyFrame() for that.
+   * The separate 'layer-hazard-borders' line layer is REMOVED; instead the fill
+   * layer uses 'fill-outline-color' so fill and border are the same polygon geometry
+   * with zero z-fighting and no crosshatch artefact.
+   */
+  async fetchAndRenderHazardSources() {
+    const emptyFC = { type: 'FeatureCollection', features: [] };
 
-      if (this.map.getSource('hazard-source')) {
-        this.map.getSource('hazard-source').setData(this.hazardData);
-      } else {
-        this.map.addSource('hazard-source', {
-          type: 'geojson',
-          data: this.hazardData,
-        });
+    if (this.map.getSource('hazard-source')) return; // already set up
 
-        // 1. 2D Base Cell Footprint
-        this.map.addLayer({
-          id: 'layer-hazard-cells',
-          type: 'fill',
-          source: 'hazard-source',
-          paint: {
-            'fill-color': [
-              'step',
-              ['get', 'prob_exceed'],
-              'rgba(2, 132, 199, 0.42)',   // < 25% Low (Sky Blue)
-              0.25, 'rgba(22, 163, 74, 0.58)',  // 25-50% Moderate (Green)
-              0.50, 'rgba(245, 158, 11, 0.68)', // 50-75% High (Amber)
-              0.75, 'rgba(234, 88, 12, 0.78)',  // 75-90% Severe (Orange)
-              0.90, 'rgba(220, 38, 38, 0.88)'   // > 90% Extreme (Crimson)
-            ],
-            'fill-opacity': this.currentViewMode === '4d' ? 0.22 : 0.85,
-          }
-        });
+    this.map.addSource('hazard-source', { type: 'geojson', data: emptyFC });
 
-        // 2. 3D Volumetric Extrusion Layer (4D Mode: Physical Convective Columns up to 14,000m)
-        this.map.addLayer({
-          id: 'layer-hazard-extrusion-4d',
-          type: 'fill-extrusion',
-          source: 'hazard-source',
-          paint: {
-            'fill-extrusion-color': [
-              'step',
-              ['get', 'prob_exceed'],
-              '#0284c7',   // < 25% Low (Sky Blue)
-              0.25, '#16a34a',  // 25-50% Moderate (Green)
-              0.50, '#f59e0b', // 50-75% High (Amber)
-              0.75, '#ea580c',  // 75-90% Severe (Orange)
-              0.90, '#dc2626'   // > 90% Extreme (Crimson)
-            ],
-            'fill-extrusion-height': [
-              'coalesce',
-              ['get', 'column_height_m'],
-              ['*', ['get', 'prob_exceed'], 10000]
-            ],
-            'fill-extrusion-base': 0,
-            'fill-extrusion-opacity': this.currentViewMode === '4d' ? 0.88 : 0,
-            'fill-extrusion-vertical-gradient': true,
-          }
-        });
-
-        // 3. Grid Cell Borders
-        this.map.addLayer({
-          id: 'layer-hazard-borders',
-          type: 'line',
-          source: 'hazard-source',
-          paint: {
-            'line-color': 'rgba(255, 255, 255, 0.40)',
-            'line-width': 0.7,
-          }
-        });
+    // 2D flat fill with integrated border (Issue 5 fix: fill-outline-color, no separate line layer)
+    this.map.addLayer({
+      id: 'layer-hazard-cells',
+      type: 'fill',
+      source: 'hazard-source',
+      paint: {
+        'fill-color': this._hazardColorExpression(),
+        'fill-opacity': this.currentViewMode === '4d' ? 0.22 : 0.85,
+        // Single-pixel crisp cell border, same geometry — no separate layer needed
+        'fill-outline-color': 'rgba(255, 255, 255, 0.45)',
       }
-
-      // Update 5 km Geodesic Radius Perimeter Rings
-      this.updateRadius5kmRings();
-
-    } catch (err) {
-      console.error('Failed to load hazard map:', err);
-    }
-  }
-
-  updateRadius5kmRings() {
-    if (!this.hazardData || !this.hazardData.features) return;
-
-    // Filter significant cells with P >= 0.40 or heavy rain >= 65 mm
-    const severeCells = this.hazardData.features.filter(
-      f => (f.properties.prob_exceed >= 0.40 || f.properties.mean_rain_mm >= 65.0)
-    );
-
-    const radiusFeatures = severeCells.map(cell => {
-      const cLon = cell.properties.center_lon;
-      const cLat = cell.properties.center_lat;
-      const circleCoords = createGeodesicCircle(cLon, cLat, 5.0, 48);
-      return {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [circleCoords]
-        },
-        properties: {
-          ...cell.properties,
-          buffer_radius_km: 5.0
-        }
-      };
     });
 
-    const radiusGeoJSON = {
-      type: 'FeatureCollection',
-      features: radiusFeatures
-    };
+    // 3D volumetric extrusion (4D mode)
+    this.map.addLayer({
+      id: 'layer-hazard-extrusion-4d',
+      type: 'fill-extrusion',
+      source: 'hazard-source',
+      paint: {
+        'fill-extrusion-color': this._hazardColorExpression3d(),
+        'fill-extrusion-height': ['coalesce', ['get', 'column_height_m'], ['*', ['get', 'prob_exceed'], 10000]],
+        'fill-extrusion-base': 0,
+        'fill-extrusion-opacity': this.currentViewMode === '4d' ? 0.88 : 0,
+        'fill-extrusion-vertical-gradient': true,
+      }
+    });
 
-    if (this.map.getSource('radius-5km-source')) {
-      this.map.getSource('radius-5km-source').setData(radiusGeoJSON);
-    } else {
-      this.map.addSource('radius-5km-source', {
-        type: 'geojson',
-        data: radiusGeoJSON
-      });
+    // 5 km geodesic radius rings
+    this.map.addSource('radius-5km-source', { type: 'geojson', data: emptyFC });
+    this.map.addLayer({
+      id: 'layer-radius-5km-rings',
+      type: 'line',
+      source: 'radius-5km-source',
+      paint: { 'line-color': '#0284c7', 'line-width': 1.6, 'line-dasharray': [3, 2], 'line-opacity': 0.75 }
+    });
+  }
 
-      this.map.addLayer({
-        id: 'layer-radius-5km-rings',
-        type: 'line',
-        source: 'radius-5km-source',
-        paint: {
-          'line-color': '#0284c7',
-          'line-width': 1.6,
-          'line-dasharray': [3, 2],
-          'line-opacity': 0.75
-        }
-      });
+  /** MapLibre step expression for fill layer (uses rgba) */
+  _hazardColorExpression() {
+    return [
+      'step', ['get', 'prob_exceed'],
+      'rgba(2, 132, 199, 0.45)',         // < 25%  Low       (sky blue)
+      0.25, 'rgba(22, 163, 74, 0.60)',   // 25-50% Moderate  (green)
+      0.50, 'rgba(245, 158, 11, 0.70)',  // 50-75% High      (amber)
+      0.75, 'rgba(234, 88, 12, 0.80)',   // 75-90% Severe    (orange)
+      0.90, 'rgba(220, 38, 38, 0.90)',   // > 90%  Extreme   (crimson)
+    ];
+  }
+
+  /** MapLibre step expression for extrusion layer (solid colours) */
+  _hazardColorExpression3d() {
+    return [
+      'step', ['get', 'prob_exceed'],
+      '#0284c7',
+      0.25, '#16a34a',
+      0.50, '#f59e0b',
+      0.75, '#ea580c',
+      0.90, '#dc2626',
+    ];
+  }
+
+  // -------------------------------------------------------------------------
+  // Issue 1 fix: single applyFrame() that is the ONLY place mutating map state
+  // -------------------------------------------------------------------------
+
+  /**
+   * Canonical frame-update function. Cancels any in-flight hazard fetch,
+   * then fetches fresh hazard data for the given frame index, and applies
+   * ALL map mutations (hazard grid, storm-eye marker, HUD labels, STATUS badge)
+   * in a single synchronous block once the data arrives.
+   *
+   * Both the manual scrub handler and the autoplay setInterval route through
+   * this function — there are no other code paths that touch map data.
+   *
+   * @param {number} idx - Index into this.leadTimes (0–10)
+   */
+  async applyFrame(idx) {
+    idx = Math.max(0, Math.min(idx, this.leadTimes.length - 1));
+    this.currentFrameIdx = idx;
+    const t = this.leadTimes[idx];
+
+    // --- Update all UI labels synchronously (instant, no wait) ---
+    const info = this.leadTimeInfo.find(item => item.time === t);
+    if (info) {
+      const badge = document.getElementById('badge-lead-time');
+      if (badge) badge.textContent = `T+${t}h`;
+      const dateLabel = document.getElementById('label-lead-time-date');
+      if (dateLabel) dateLabel.textContent = `${info.date} · ${info.status}`;
+      const pressureEl = document.getElementById('hud-pressure');
+      if (pressureEl) pressureEl.textContent = `${info.mslp} hPa`;
+      const windEl = document.getElementById('hud-wind');
+      if (windEl) windEl.textContent = `${info.wind} km/h`;
+
+      // Issue 6 fix: STATUS badge tracks current frame, not peak classification
+      const intensityEl = document.getElementById('hud-intensity');
+      if (intensityEl) {
+        const pulseClass = info.wind >= 150 ? 'red' : info.wind >= 90 ? 'amber' : 'green';
+        intensityEl.innerHTML =
+          `<span class="status-dot-pulse ${pulseClass}"></span>${info.status}`;
+      }
+
+      // EFI chip (approximated from wind speed)
+      const efiEl = document.getElementById('hud-efi');
+      if (efiEl) {
+        const efi = Math.min(0.99, Math.max(0.0, (info.wind - 40) / 200)).toFixed(2);
+        efiEl.textContent = `EFI ${efi}`;
+        efiEl.className = `efi-chip ${parseFloat(efi) >= 0.75 ? 'efi-high' : parseFloat(efi) >= 0.45 ? 'efi-mod' : 'efi-low'}`;
+      }
+    }
+
+    // --- Issue 4 fix: update legend title live with current threshold ---
+    this._updateLegendTitle();
+
+    // --- Issue 1 fix: cancel any previous in-flight hazard fetch ---
+    if (this._hazardAbortCtrl) {
+      this._hazardAbortCtrl.abort();
+    }
+    this._hazardAbortCtrl = new AbortController();
+    const { signal } = this._hazardAbortCtrl;
+
+    // --- Fetch hazard data ---
+    let hazardGeoJSON = null;
+    try {
+      const url = `/events/phailin_2013/hazard-map?lead_time=${t}&threshold_mm=${this.currentThreshold}`;
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      hazardGeoJSON = await res.json();
+      this.hazardData = hazardGeoJSON;
+    } catch (err) {
+      if (err.name === 'AbortError') return; // stale request; newer one took over
+      console.error('Failed to load hazard map:', err);
+      return;
+    }
+
+    // --- Synchronous block: update BOTH hazard-grid AND storm-eye in same JS task ---
+    // (Issue 1: no setTimeout, no rAF, no debounce — back-to-back setData calls)
+
+    // 1. Hazard grid
+    if (this.map.getSource('hazard-source') && hazardGeoJSON) {
+      this.map.getSource('hazard-source').setData(hazardGeoJSON);
+    }
+
+    // 2. 5 km radius rings
+    this._updateRadius5kmRings();
+
+    // 3. Storm-eye marker — updated in the same microtask queue flush as the grid
+    this._updateStormEyeMarker(t);
+  }
+
+  /** Updates the top-right legend title to reflect the current threshold (Issue 4 fix) */
+  _updateLegendTitle() {
+    const legendHead = document.querySelector('#map-legend .legend-head');
+    if (legendHead) {
+      legendHead.textContent = `P(Rainfall > ${this.currentThreshold} mm)`;
     }
   }
 
-  updateSelectedCellBuffer(lat, lon, colHeight) {
-    const circleCoords = createGeodesicCircle(lon, lat, 5.0, 64);
-    const selectedGeoJSON = {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [circleCoords]
-          },
-          properties: {
-            radius_km: 5.0,
-            column_height_m: colHeight || 8000
-          }
-        }
-      ]
-    };
-
-    if (this.map.getSource('selected-cell-source')) {
-      this.map.getSource('selected-cell-source').setData(selectedGeoJSON);
-    } else {
-      this.map.addSource('selected-cell-source', {
-        type: 'geojson',
-        data: selectedGeoJSON
-      });
-
-      this.map.addLayer({
-        id: 'layer-selected-5km-fill',
-        type: 'fill',
-        source: 'selected-cell-source',
-        paint: {
-          'fill-color': '#0284c7',
-          'fill-opacity': 0.22
-        }
-      });
-
-      this.map.addLayer({
-        id: 'layer-selected-5km-line',
-        type: 'line',
-        source: 'selected-cell-source',
-        paint: {
-          'line-color': '#0284c7',
-          'line-width': 2.6,
-          'line-dasharray': [3, 2],
-          'line-opacity': 0.95
-        }
-      });
-
-      this.map.addLayer({
-        id: 'layer-selected-5km-extrusion',
-        type: 'fill-extrusion',
-        source: 'selected-cell-source',
-        paint: {
-          'fill-extrusion-color': '#0284c7',
-          'fill-extrusion-height': ['get', 'column_height_m'],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': this.currentViewMode === '4d' ? 0.40 : 0
-        }
-      });
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Storm-eye marker
+  // -------------------------------------------------------------------------
 
   createStormEyeMarker() {
     const el = document.createElement('div');
     el.className = 'storm-eye-marker';
-    el.style.width = '22px';
-    el.style.height = '22px';
-    el.style.borderRadius = '50%';
-    el.style.background = '#dc2626';
-    el.style.boxShadow = '0 0 0 4px rgba(220, 38, 38, 0.25), 0 3px 10px rgba(0, 0, 0, 0.25)';
-    el.style.border = '3px solid #ffffff';
-    el.style.cursor = 'pointer';
+    el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:#dc2626;' +
+      'box-shadow:0 0 0 4px rgba(220,38,38,0.25),0 3px 10px rgba(0,0,0,0.25);' +
+      'border:3px solid #ffffff;cursor:pointer;';
     el.title = 'Current Storm Eye Position';
-
     this.stormEyeMarker = new maplibregl.Marker({ element: el })
       .setLngLat([84.91, 19.26])
       .addTo(this.map);
-
-    this.updateStormEyeMarker();
+    this._updateStormEyeMarker(this.leadTimes[this.currentFrameIdx]);
   }
 
-  updateStormEyeMarker() {
+  _updateStormEyeMarker(leadTimeHours) {
     if (!this.stormEyeMarker || !this.trackData) return;
     const pt = this.trackData.features.find(
-      f => f.properties.layer_type === 'track_point' && f.properties.lead_time_hours === this.currentLeadTime
+      f => f.properties.layer_type === 'track_point' &&
+           f.properties.lead_time_hours === leadTimeHours
     );
-    if (pt) {
-      this.stormEyeMarker.setLngLat(pt.geometry.coordinates);
+    if (pt) this.stormEyeMarker.setLngLat(pt.geometry.coordinates);
+  }
+
+  // -------------------------------------------------------------------------
+  // Radius rings helper
+  // -------------------------------------------------------------------------
+
+  _updateRadius5kmRings() {
+    if (!this.hazardData || !this.hazardData.features) return;
+    const severeCells = this.hazardData.features.filter(
+      f => f.properties.prob_exceed >= 0.40 || f.properties.mean_rain_mm >= 65.0
+    );
+    const radiusFeatures = severeCells.map(cell => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [createGeodesicCircle(cell.properties.center_lon, cell.properties.center_lat, 5.0, 48)]
+      },
+      properties: { ...cell.properties, buffer_radius_km: 5.0 }
+    }));
+    const radiusGeoJSON = { type: 'FeatureCollection', features: radiusFeatures };
+    if (this.map.getSource('radius-5km-source')) {
+      this.map.getSource('radius-5km-source').setData(radiusGeoJSON);
     }
   }
 
-  bindInteractions() {
-    // Cell click drill-down on both 2D cells and 3D extruded columns
-    ['layer-hazard-cells', 'layer-hazard-extrusion-4d'].forEach(layerId => {
-      this.map.on('click', layerId, (e) => {
-        if (e.features && e.features.length > 0) {
-          const feature = e.features[0];
-          this.openDrawer(feature.properties);
-        }
-      });
+  // -------------------------------------------------------------------------
+  // Visibility state management
+  // -------------------------------------------------------------------------
 
-      this.map.on('mouseenter', layerId, () => {
-        this.map.getCanvas().style.cursor = 'pointer';
-      });
-
-      this.map.on('mouseleave', layerId, () => {
-        this.map.getCanvas().style.cursor = '';
+  _reapplyLayerVisibility() {
+    const layerMap = {
+      'stage1-cone':   ['layer-uncertainty-cone', 'layer-uncertainty-cone-border', 'layer-crop-box',
+                        'layer-track-line-casing', 'layer-track-line', 'layer-track-points'],
+      'stage2-hazard': ['layer-hazard-cells', 'layer-hazard-extrusion-4d'],
+      'radius-5km':    ['layer-radius-5km-rings'],
+      'districts':     ['layer-districts-fill', 'layer-districts-line', 'layer-districts-labels'],
+    };
+    Object.entries(this.layersVisible).forEach(([key, isVisible]) => {
+      const visibilityVal = isVisible ? 'visible' : 'none';
+      (layerMap[key] || []).forEach(id => {
+        if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
       });
     });
   }
@@ -755,31 +711,28 @@ class ChakraNetController {
   toggleLayer(layerKey) {
     const isVisible = !this.layersVisible[layerKey];
     this.layersVisible[layerKey] = isVisible;
-
     const chk = document.getElementById(`chk-${layerKey}`);
     if (chk) chk.checked = isVisible;
     const card = document.getElementById(`card-${layerKey}`);
     if (card) card.classList.toggle('active', isVisible);
 
     const visibilityVal = isVisible ? 'visible' : 'none';
-
     if (layerKey === 'stage1-cone') {
-      ['layer-uncertainty-cone', 'layer-uncertainty-cone-border', 'layer-crop-box', 'layer-track-line-casing', 'layer-track-line', 'layer-track-points'].forEach(id => {
+      ['layer-uncertainty-cone', 'layer-uncertainty-cone-border', 'layer-crop-box',
+       'layer-track-line-casing', 'layer-track-line', 'layer-track-points'].forEach(id => {
         if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
       });
-      if (this.stormEyeMarker) {
+      if (this.stormEyeMarker)
         this.stormEyeMarker.getElement().style.display = isVisible ? 'block' : 'none';
-      }
     } else if (layerKey === 'stage2-hazard') {
-      ['layer-hazard-cells', 'layer-hazard-borders', 'layer-hazard-extrusion-4d'].forEach(id => {
+      ['layer-hazard-cells', 'layer-hazard-extrusion-4d'].forEach(id => {
         if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
       });
       const legend = document.getElementById('map-legend');
       if (legend) legend.style.display = isVisible ? 'flex' : 'none';
     } else if (layerKey === 'radius-5km') {
-      if (this.map.getLayer('layer-radius-5km-rings')) {
+      if (this.map.getLayer('layer-radius-5km-rings'))
         this.map.setLayoutProperty('layer-radius-5km-rings', 'visibility', visibilityVal);
-      }
     } else if (layerKey === 'districts') {
       ['layer-districts-fill', 'layer-districts-line', 'layer-districts-labels'].forEach(id => {
         if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', visibilityVal);
@@ -787,49 +740,54 @@ class ChakraNetController {
     }
   }
 
-  setThreshold(val) {
-    this.currentThreshold = parseFloat(val);
-    document.getElementById('label-threshold').textContent = `${val} mm`;
-    this.fetchAndRenderHazard();
+  // -------------------------------------------------------------------------
+  // Hover tooltip (Issue 4 fix: per-cell hover showing exact probability)
+  // -------------------------------------------------------------------------
+
+  bindInteractions() {
+    const popup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      className: 'chakranet-cell-popup',
+    });
+
+    ['layer-hazard-cells', 'layer-hazard-extrusion-4d'].forEach(layerId => {
+      this.map.on('click', layerId, (e) => {
+        if (e.features && e.features.length > 0) this.openDrawer(e.features[0].properties);
+      });
+
+      // Issue 4 fix: hover tooltip with exact probability
+      this.map.on('mousemove', layerId, (e) => {
+        if (!e.features || e.features.length === 0) return;
+        this.map.getCanvas().style.cursor = 'pointer';
+        const props = e.features[0].properties;
+        const pct = Math.round((props.prob_exceed || 0) * 100);
+        const rain = props.mean_rain_mm ? `${props.mean_rain_mm.toFixed(0)} mm` : '—';
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div class="cell-popup-inner">` +
+            `<strong>${pct}%</strong> chance of exceeding ${this.currentThreshold} mm<br>` +
+            `<span class="popup-sub">Ensemble mean: ${rain} · ${props.district || '—'}</span>` +
+            `</div>`
+          )
+          .addTo(this.map);
+      });
+
+      this.map.on('mouseleave', layerId, () => {
+        this.map.getCanvas().style.cursor = '';
+        popup.remove();
+      });
+    });
   }
 
-  async onTimelineChange(idx) {
-    const t = this.leadTimes[parseInt(idx, 10)];
-    this.currentLeadTime = t;
+  // -------------------------------------------------------------------------
+  // Timeline / playback
+  // -------------------------------------------------------------------------
 
-    const info = this.leadTimeInfo.find(item => item.time === t);
-    if (info) {
-      document.getElementById('badge-lead-time').textContent = `T+${t}h`;
-      document.getElementById('label-lead-time-date').textContent = `${info.date} · ${info.status}`;
-      document.getElementById('hud-pressure').textContent = `${info.mslp} hPa`;
-      document.getElementById('hud-wind').textContent = `${info.wind} km/h`;
-
-      // Bug 1 fix: bind the status chip to the CURRENT lead-time's status,
-      // not the peak event intensity. Pulse-dot colour tracks wind speed.
-      const intensityEl = document.getElementById('hud-intensity');
-      if (intensityEl) {
-        const pulseClass = info.wind >= 150 ? 'red'
-                         : info.wind >= 90  ? 'amber'
-                         : 'green';
-        intensityEl.innerHTML =
-          `<span class="status-dot-pulse ${pulseClass}"></span>${info.status}`;
-      }
-
-      // Enhancement: surface EFI score chip if available
-      const efiEl = document.getElementById('hud-efi');
-      if (efiEl) {
-        // EFI peaks at T+72h–T+84h for Phailin; approximate from wind intensity
-        const efi = Math.min(0.99, Math.max(0.0, (info.wind - 40) / 200)).toFixed(2);
-        efiEl.textContent = `EFI ${efi}`;
-        efiEl.className = `efi-chip ${parseFloat(efi) >= 0.75 ? 'efi-high' : parseFloat(efi) >= 0.45 ? 'efi-mod' : 'efi-low'}`;
-      }
-    }
-
-    // Bug 2 fix: AWAIT the hazard fetch so the grid is updated BEFORE the
-    // storm-eye marker moves. Both land in the same MapLibre render cycle,
-    // eliminating the desync where the eye is 100s km ahead of the grid.
-    await this.fetchAndRenderHazard();
-    this.updateStormEyeMarker();
+  /** Issue 1 fix: manual scrub routes through applyFrame */
+  onTimelineChange(idx) {
+    this.applyFrame(parseInt(idx, 10));
   }
 
   togglePlayback() {
@@ -840,13 +798,12 @@ class ChakraNetController {
     if (this.isPlaying) {
       btn.style.background = 'var(--accent-blue)';
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-
       const intervalMs = Math.round(1400 / this.playbackSpeed);
+      // Issue 1 fix: autoplay loop also routes through applyFrame — no separate update path
       this.playTimer = setInterval(() => {
-        let currentIdx = parseInt(slider.value, 10);
-        let nextIdx = (currentIdx + 1) % this.leadTimes.length;
+        const nextIdx = (parseInt(slider.value, 10) + 1) % this.leadTimes.length;
         slider.value = nextIdx;
-        this.onTimelineChange(nextIdx);
+        this.applyFrame(nextIdx);
       }, intervalMs);
     } else {
       btn.style.background = '';
@@ -857,41 +814,61 @@ class ChakraNetController {
 
   cycleSpeed() {
     const speeds = [1, 2, 4];
-    const nextIdx = (speeds.indexOf(this.playbackSpeed) + 1) % speeds.length;
-    this.playbackSpeed = speeds[nextIdx];
+    this.playbackSpeed = speeds[(speeds.indexOf(this.playbackSpeed) + 1) % speeds.length];
     document.getElementById('btn-speed').textContent = `${this.playbackSpeed}x Speed`;
-
-    if (this.isPlaying) {
-      this.togglePlayback();
-      this.togglePlayback();
-    }
+    if (this.isPlaying) { this.togglePlayback(); this.togglePlayback(); }
   }
 
-  // Camera views
+  // -------------------------------------------------------------------------
+  // Issue 4 fix: threshold slider re-triggers applyFrame (not just a re-fetch)
+  // -------------------------------------------------------------------------
+
+  setThreshold(val) {
+    this.currentThreshold = parseFloat(val);
+    const label = document.getElementById('label-threshold');
+    if (label) label.textContent = `${val} mm`;
+    // Update legend title immediately
+    this._updateLegendTitle();
+    // Re-run applyFrame so hazard grid re-colours with new threshold
+    this.applyFrame(this.currentFrameIdx);
+  }
+
+  // -------------------------------------------------------------------------
+  // Camera bookmarks
+  // -------------------------------------------------------------------------
+
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+    const sidebar = document.getElementById('control-sidebar');
+    const bottomDock = document.getElementById('bottom-dock');
+    const btn = document.getElementById('sidebar-toggle-btn');
+    if (sidebar) sidebar.classList.toggle('collapsed', !this.isSidebarOpen);
+    if (bottomDock) bottomDock.classList.toggle('expanded-left', !this.isSidebarOpen);
+    if (btn) btn.classList.toggle('active', this.isSidebarOpen);
+    setTimeout(() => { if (this.map) this.map.resize(); }, 300);
+  }
+
   flyToLandfall() {
     this.map.flyTo({
-      center: [84.91, 19.26],
-      zoom: 8.6,
+      center: [84.91, 19.26], zoom: 8.6,
       pitch: this.currentViewMode === '4d' ? 56 : 0,
       bearing: this.currentViewMode === '4d' ? -14 : 0,
-      duration: 1800,
-      essential: true,
+      duration: 1800, essential: true,
     });
   }
 
   flyToStormEye() {
     if (this.trackData && this.trackData.features) {
+      const t = this.leadTimes[this.currentFrameIdx];
       const pt = this.trackData.features.find(
-        f => f.properties.layer_type === 'track_point' && f.properties.lead_time_hours === this.currentLeadTime
+        f => f.properties.layer_type === 'track_point' && f.properties.lead_time_hours === t
       );
       if (pt) {
         this.map.flyTo({
-          center: pt.geometry.coordinates,
-          zoom: 8.0,
+          center: pt.geometry.coordinates, zoom: 8.0,
           pitch: this.currentViewMode === '4d' ? 56 : 0,
           bearing: this.currentViewMode === '4d' ? -14 : 0,
-          duration: 1500,
-          essential: true,
+          duration: 1500, essential: true,
         });
         return;
       }
@@ -900,17 +877,46 @@ class ChakraNetController {
   }
 
   resetOverview() {
-    this.map.flyTo({
-      center: [85.8, 18.8],
-      zoom: 6.2,
-      pitch: this.currentViewMode === '4d' ? 50 : 0,
-      bearing: this.currentViewMode === '4d' ? -10 : 0,
-      duration: 1600,
-      essential: true,
-    });
+    this.fitBoundsToEvent(true);
   }
 
-  // Slide-out Inspection Drawer with Accurate 5 km Radius Mapping
+  // -------------------------------------------------------------------------
+  // Selected-cell 5 km buffer (drill-down drawer)
+  // -------------------------------------------------------------------------
+
+  updateSelectedCellBuffer(lat, lon, colHeight) {
+    const circleCoords = createGeodesicCircle(lon, lat, 5.0, 64);
+    const selectedGeoJSON = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [circleCoords] },
+        properties: { radius_km: 5.0, column_height_m: colHeight || 8000 }
+      }]
+    };
+    if (this.map.getSource('selected-cell-source')) {
+      this.map.getSource('selected-cell-source').setData(selectedGeoJSON);
+    } else {
+      this.map.addSource('selected-cell-source', { type: 'geojson', data: selectedGeoJSON });
+      this.map.addLayer({ id: 'layer-selected-5km-fill', type: 'fill', source: 'selected-cell-source',
+        paint: { 'fill-color': '#0284c7', 'fill-opacity': 0.22 } });
+      this.map.addLayer({ id: 'layer-selected-5km-line', type: 'line', source: 'selected-cell-source',
+        paint: { 'line-color': '#0284c7', 'line-width': 2.6, 'line-dasharray': [3, 2], 'line-opacity': 0.95 } });
+      this.map.addLayer({ id: 'layer-selected-5km-extrusion', type: 'fill-extrusion', source: 'selected-cell-source',
+        paint: {
+          'fill-extrusion-color': '#0284c7',
+          'fill-extrusion-height': ['get', 'column_height_m'],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': this.currentViewMode === '4d' ? 0.40 : 0
+        }
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Drill-down drawer
+  // -------------------------------------------------------------------------
+
   async openDrawer(props) {
     this.selectedCellProps = props;
     const drawer = document.getElementById('drilldown-drawer');
@@ -924,18 +930,14 @@ class ChakraNetController {
     const severity = props.severity || 'Extreme';
     const colHeight = props.column_height_m || Math.round((props.prob_exceed || 0.9) * 11000);
 
-    // Update 5 km Geodesic Buffer and 3D Column on Map
     this.updateSelectedCellBuffer(lat, lon, colHeight);
-
-    // Calculate exact geodesic distance to Gopalpur landfall (19.26, 84.91)
     const distLandfall = haversineDistanceKm(lat, lon, 19.26, 84.91);
 
     document.getElementById('drawer-cell-name').textContent = `${district} 5 km Cell`;
     document.getElementById('drawer-coords').textContent = `${lat}°N, ${lon}°E · ${district} Coastal Sector`;
     document.getElementById('drawer-prob-val').textContent = `${pExceed}%`;
     document.getElementById('drawer-rain-val').textContent = `${meanRain} mm/24h`;
-    
-    // Update Spatial Geometry Card
+
     const boundsEl = document.getElementById('drawer-exact-bounds');
     if (boundsEl) boundsEl.textContent = '5.0 km × 5.0 km Grid Cell';
     const radEl = document.getElementById('drawer-radius-val');
@@ -948,33 +950,35 @@ class ChakraNetController {
     if (colEl) colEl.textContent = `${Math.round(colHeight).toLocaleString()} m (3D)`;
 
     const badgeEl = document.getElementById('drawer-severity-badge');
-    const tagClass = severity === 'Extreme' ? 'tag-extreme' : (severity === 'Severe' ? 'tag-severe' : (severity === 'Moderate' ? 'tag-moderate' : 'tag-minor'));
+    const tagClass = severity === 'Extreme' ? 'tag-extreme' : severity === 'Severe' ? 'tag-severe' :
+                     severity === 'Moderate' ? 'tag-moderate' : 'tag-minor';
     badgeEl.innerHTML = `<span class="severity-tag ${tagClass}">${severity}</span>`;
 
     try {
-      const res = await fetch(`/events/phailin_2013/alerts?lead_time=${this.currentLeadTime}&lat=${lat}&lon=${lon}&district=${encodeURIComponent(district)}&severity=${severity}`);
+      const res = await fetch(
+        `/events/phailin_2013/alerts?lead_time=${this.leadTimes[this.currentFrameIdx]}&lat=${lat}&lon=${lon}&district=${encodeURIComponent(district)}&severity=${severity}`
+      );
       const alertData = await res.json();
-
-      if (alertData.multilingual && alertData.multilingual.en) {
-        document.getElementById('drawer-headline-en').textContent = alertData.multilingual.en.headline;
-        document.getElementById('drawer-desc-en').textContent = alertData.multilingual.en.description;
+      if (alertData.multilingual) {
+        const ml = alertData.multilingual;
+        if (ml.en) {
+          document.getElementById('drawer-headline-en').textContent = ml.en.headline;
+          document.getElementById('drawer-desc-en').textContent = ml.en.description;
+        }
+        if (ml.hi) {
+          document.getElementById('drawer-headline-hi').textContent = ml.hi.headline;
+          document.getElementById('drawer-desc-hi').textContent = ml.hi.description;
+          document.getElementById('drawer-instruction-hi').textContent = ml.hi.instruction;
+        }
+        if (ml.or) {
+          const hOr = document.getElementById('drawer-headline-or');
+          const dOr = document.getElementById('drawer-desc-or');
+          const iOr = document.getElementById('drawer-instruction-or');
+          if (hOr) hOr.textContent = ml.or.headline;
+          if (dOr) dOr.textContent = ml.or.description;
+          if (iOr) iOr.textContent = ml.or.instruction;
+        }
       }
-
-      if (alertData.multilingual && alertData.multilingual.hi) {
-        document.getElementById('drawer-headline-hi').textContent = alertData.multilingual.hi.headline;
-        document.getElementById('drawer-desc-hi').textContent = alertData.multilingual.hi.description;
-        document.getElementById('drawer-instruction-hi').textContent = alertData.multilingual.hi.instruction;
-      }
-
-      if (alertData.multilingual && alertData.multilingual.or) {
-        const hOr = document.getElementById('drawer-headline-or');
-        const dOr = document.getElementById('drawer-desc-or');
-        const iOr = document.getElementById('drawer-instruction-or');
-        if (hOr) hOr.textContent = alertData.multilingual.or.headline;
-        if (dOr) dOr.textContent = alertData.multilingual.or.description;
-        if (iOr) iOr.textContent = alertData.multilingual.or.instruction;
-      }
-
       document.getElementById('drawer-xml-content').textContent = alertData.cap_xml;
     } catch (err) {
       console.error('Failed to fetch CAP alert details:', err);
@@ -984,10 +988,7 @@ class ChakraNetController {
   closeDrawer() {
     document.getElementById('drilldown-drawer').classList.remove('open');
     if (this.map && this.map.getSource('selected-cell-source')) {
-      this.map.getSource('selected-cell-source').setData({
-        type: 'FeatureCollection',
-        features: []
-      });
+      this.map.getSource('selected-cell-source').setData({ type: 'FeatureCollection', features: [] });
     }
   }
 
@@ -1001,29 +1002,29 @@ class ChakraNetController {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // Alert dispatch
+  // -------------------------------------------------------------------------
+
   async dispatchSimulatedAlert() {
     const btn = document.getElementById('btn-dispatch-alert');
     btn.disabled = true;
     btn.textContent = 'Simulating Transmission...';
-
     const payload = {
       cell_id: this.selectedCellProps ? this.selectedCellProps.cell_id : 'cell_19_84',
       channels: ['SACHET_SMS', 'BHASHINI_VOICE', 'CAP_BROADCAST'],
       target_districts: ['Ganjam', 'Puri', 'Khurda'],
       simulation_mode: true,
     };
-
     try {
       const res = await fetch('/events/phailin_2013/alerts/dispatch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
       const receipt = await res.json();
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Dispatch Simulated CAP Alert (SACHET)`;
-
       this.showToast(`[DISPATCH RECORDED] ${receipt.dispatch_id} saved to Supabase DB & SACHET gateway.`);
       this.closeDrawer();
     } catch (err) {
@@ -1033,11 +1034,14 @@ class ChakraNetController {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Database modal
+  // -------------------------------------------------------------------------
+
   async showDatabaseModal() {
     const modal = document.getElementById('db-modal');
     if (!modal) return;
     modal.style.display = 'flex';
-
     try {
       const res = await fetch('/db/status');
       if (res.ok) {
@@ -1045,24 +1049,18 @@ class ChakraNetController {
         const latencyEl = document.getElementById('modal-db-latency');
         const urlEl = document.getElementById('modal-db-url');
         const listEl = document.getElementById('modal-db-tables-list');
-
         if (latencyEl) latencyEl.textContent = `${data.latency_ms || 14} ms (Live HTTP REST)`;
         if (urlEl) urlEl.textContent = data.supabase_url || 'https://uuaacphwlyekeaixiqty.supabase.co';
-
         if (listEl && data.tables) {
           listEl.innerHTML = '';
-          const tableNames = ['events', 'tracks', 'hazard_grids', 'alerts', 'dispatches'];
-          tableNames.forEach(t => {
+          ['events', 'tracks', 'hazard_grids', 'alerts', 'dispatches'].forEach(t => {
             const tblInfo = data.tables[t] || {};
             const isReady = tblInfo.exists;
             const item = document.createElement('div');
             item.className = 'db-table-item';
-            item.innerHTML = `
-              <span class="db-table-name">${t}</span>
-              <span class="db-table-badge ${isReady ? 'ready' : 'pending'}">
-                ${isReady ? `Ready (${tblInfo.row_count || 0} rows)` : 'Waiting for DDL'}
-              </span>
-            `;
+            item.innerHTML = `<span class="db-table-name">${t}</span>` +
+              `<span class="db-table-badge ${isReady ? 'ready' : 'pending'}">` +
+              `${isReady ? `Ready (${tblInfo.row_count || 0} rows)` : 'Waiting for DDL'}</span>`;
             listEl.appendChild(item);
           });
         }
@@ -1080,21 +1078,15 @@ class ChakraNetController {
   copySchemaSql() {
     const preview = document.getElementById('modal-sql-preview');
     if (preview) {
-      navigator.clipboard.writeText(preview.textContent).then(() => {
-        this.showToast('PostgreSQL schema copied to clipboard! Paste into Supabase SQL editor.');
-      }).catch(() => {
-        this.showToast('Please copy SQL from the preview box.');
-      });
+      navigator.clipboard.writeText(preview.textContent)
+        .then(() => this.showToast('PostgreSQL schema copied to clipboard!'))
+        .catch(() => this.showToast('Please copy SQL from the preview box.'));
     }
   }
 
   async seedSupabaseData() {
     const btn = document.getElementById('btn-seed-supabase');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Syncing Records to Supabase...';
-    }
-
+    if (btn) { btn.disabled = true; btn.textContent = 'Syncing Records to Supabase...'; }
     try {
       const res = await fetch('/db/seed', { method: 'POST' });
       const result = await res.json();
@@ -1104,10 +1096,7 @@ class ChakraNetController {
     } catch (err) {
       this.showToast('Tables pending: Please execute supabase_schema.sql in Supabase SQL editor first.');
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = '⚡ Sync / Seed Real Records to Supabase';
-      }
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Sync / Seed Real Records to Supabase'; }
     }
   }
 
@@ -1115,9 +1104,7 @@ class ChakraNetController {
     const toast = document.getElementById('toast-notice');
     document.getElementById('toast-text').textContent = msg;
     toast.classList.add('show');
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 4500);
+    setTimeout(() => toast.classList.remove('show'), 4500);
   }
 }
 

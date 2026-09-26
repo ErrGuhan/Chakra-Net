@@ -33,8 +33,9 @@
     <!-- MapLibre Canvas Viewport -->
     <div id="map-view" aria-label="Geospatial Map Viewport"></div>
 
-    <!-- Top Navigation HUD Bar -->
+    <!-- Top Navigation HUD Bar (Responsive Clean Layout, Dropdown Basemap) -->
     <header class="top-hud" id="top-hud">
+      <!-- Left: Brand Section -->
       <div class="brand-section">
         <button class="sidebar-toggle-btn active" id="sidebar-toggle-btn" onclick="app.toggleSidebar()" title="Toggle Control Panel (Collapse / Expand)" aria-label="Toggle Panel">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -55,45 +56,58 @@
         </div>
       </div>
 
-      <!-- Live Storm Key Indicators (Spacious & Focused) -->
-      <div class="telemetry-strip" id="telemetry-strip">
-        <div class="telemetry-item intensity-alert">
-          <span class="telemetry-label">Status</span>
-          <span class="telemetry-value text-danger" id="hud-intensity"><span class="status-dot-pulse red"></span>Cat 5 Super Cyclone</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="telemetry-label">Min Pressure</span>
-          <span class="telemetry-value" id="hud-pressure">940 hPa</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="telemetry-label">Peak Wind</span>
-          <span class="telemetry-value text-primary-val" id="hud-wind">215 km/h</span>
-        </div>
-        <div class="telemetry-item db-status" id="hud-db-status" onclick="app.showDatabaseModal()" title="Click to inspect real Supabase PostgreSQL connection &amp; schema" style="cursor: pointer;">
-          <span class="telemetry-label">Database</span>
-          <span class="telemetry-value text-success" id="hud-db-val">
-            <span class="status-dot online"></span> ⚡ Supabase Live
-          </span>
-        </div>
-      </div>
-
-      <!-- Map Viewport Controls: 2D/4D Switcher + Compact Basemap Switcher -->
-      <div class="hud-right-controls">
-        <div class="view-mode-switcher" role="radiogroup" aria-label="Dimensional Map View">
-          <button class="view-mode-btn" id="btn-view-2d" onclick="app.setViewMode('2d')" title="2D Orthographic Map View (Flat Canvas)">
-            🗺️ 2D Plan
-          </button>
-          <button class="view-mode-btn active" id="btn-view-4d" onclick="app.setViewMode('4d')" title="4D Spatiotemporal Volumetric View">
-            🌐 4D Volumetric
-          </button>
+      <!-- Center / Telemetry Cluster -->
+      <div class="hud-center-cluster">
+        <div class="telemetry-strip" id="telemetry-strip">
+          <div class="telemetry-item intensity-alert" id="hud-intensity-box">
+            <span class="telemetry-label">Status</span>
+            <span class="telemetry-value text-danger" id="hud-intensity"><span class="status-dot-pulse red"></span>Cat 5 Super Cyclone</span>
+          </div>
+          <div class="telemetry-compact-group" id="telemetry-compact-group">
+            <div class="telemetry-item" title="Central Minimum Sea-Level Pressure">
+              <span class="telemetry-label">Min MSLP</span>
+              <span class="telemetry-value" id="hud-pressure">940 hPa</span>
+            </div>
+            <div class="telemetry-item" title="Peak Sustained Surface Wind Speed">
+              <span class="telemetry-label">Peak Wind</span>
+              <span class="telemetry-value text-primary-val" id="hud-wind">215 km/h</span>
+            </div>
+            <div class="telemetry-item db-status" id="hud-db-status" onclick="app.showDatabaseModal()" title="Click to inspect Supabase PostgreSQL connection &amp; schema" style="cursor: pointer;">
+              <span class="telemetry-label">Database</span>
+              <span class="telemetry-value text-success" id="hud-db-val">
+                <span class="status-dot online"></span> ⚡ Supabase
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div class="basemap-switcher" role="radiogroup" aria-label="Basemap Style Selector">
-          <button class="basemap-btn active" id="btn-bm-dark" onclick="app.setBasemap('dark-tactical')" title="Tactical Dark Canvas">🌑 Dark</button>
-          <button class="basemap-btn" id="btn-bm-satellite" onclick="app.setBasemap('google-satellite')" title="High-Res Satellite Imagery">🛰️ Sat</button>
-          <button class="basemap-btn" id="btn-bm-terrain" onclick="app.setBasemap('google-terrain')" title="Ocean Bathymetry &amp; Contours">🌊 Ocean</button>
-          <button class="basemap-btn" id="btn-bm-light" onclick="app.setBasemap('light-clean')" title="Light Gray Canvas">☀️ Light</button>
-          <button class="basemap-btn" id="btn-bm-osm" onclick="app.setBasemap('osm')" title="OpenStreetMap Base">🗺️ OSM</button>
+        <!-- Right Controls: 2D/4D Switcher + Dropdown Basemap -->
+        <div class="hud-right-controls">
+          <div class="view-mode-switcher" role="radiogroup" aria-label="Dimensional Map View">
+            <button class="view-mode-btn" id="btn-view-2d" onclick="app.setViewMode('2d')" title="2D Orthographic Map View (Flat Canvas)">
+              🗺️ 2D Plan
+            </button>
+            <button class="view-mode-btn active" id="btn-view-4d" onclick="app.setViewMode('4d')" title="4D Spatiotemporal Volumetric View">
+              🌐 4D Volumetric
+            </button>
+          </div>
+
+          <!-- Consolidated Basemap Dropdown (Issue 13 fix: replaces 5 individual buttons) -->
+          <div class="basemap-dropdown-wrapper" id="basemap-dropdown-container">
+            <button class="basemap-dropdown-btn" id="btn-basemap-dropdown" onclick="app.toggleBasemapDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Switch Geospatial Basemap Canvas">
+              <span id="label-current-basemap">🌑 Dark</span>
+              <svg class="dropdown-chevron" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+            <div class="basemap-dropdown-menu" id="basemap-dropdown-menu" role="menu">
+              <button class="basemap-dropdown-item active" id="btn-bm-dark" onclick="app.selectBasemap('dark-tactical', '🌑 Dark', event)" role="menuitem">🌑 Dark Tactical</button>
+              <button class="basemap-dropdown-item" id="btn-bm-satellite" onclick="app.selectBasemap('google-satellite', '🛰️ Sat', event)" role="menuitem">🛰️ Satellite Imagery</button>
+              <button class="basemap-dropdown-item" id="btn-bm-terrain" onclick="app.selectBasemap('google-terrain', '🌊 Ocean', event)" role="menuitem">🌊 Ocean Bathymetry</button>
+              <button class="basemap-dropdown-item" id="btn-bm-light" onclick="app.selectBasemap('light-clean', '☀️ Light', event)" role="menuitem">☀️ Light Gray Canvas</button>
+              <button class="basemap-dropdown-item" id="btn-bm-osm" onclick="app.selectBasemap('osm', '🗺️ OSM', event)" role="menuitem">🗺️ OpenStreetMap</button>
+            </div>
+          </div>
         </div>
       </div>
     </header>

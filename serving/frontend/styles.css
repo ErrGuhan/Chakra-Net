@@ -145,13 +145,17 @@ body {
    Top Header Bar & Telemetry Strip (Tactical Dark Glass Ribbon)
    ========================================================================== */
 
+/* ==========================================================================
+   Top Header Bar & Telemetry Strip (Tactical Dark Glass Ribbon)
+   ========================================================================== */
+
 .top-hud {
   position: absolute;
   top: 14px;
   left: 16px;
   right: 16px;
   max-width: calc(100vw - 32px);
-  height: 64px;
+  min-height: 60px;
   background: var(--bg-surface);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -160,10 +164,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  z-index: 20;
+  padding: 8px 16px;
+  gap: 12px;
+  z-index: 25;
   box-shadow: var(--shadow-hud);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .brand-section {
@@ -228,7 +233,7 @@ body {
 
 .brand-title-row h1 {
   font-family: var(--font-heading);
-  font-size: 1.28rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--text-primary);
@@ -256,27 +261,41 @@ body {
   margin-top: 3px;
 }
 
+/* Center Cluster: Telemetry + Controls */
+.hud-center-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
 /* Telemetry Stats Strip (Spacious, Clear, Focused) */
 .telemetry-strip {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.telemetry-compact-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .telemetry-item {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 5px 12px;
+  border-radius: 9px;
+  padding: 4px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  min-width: 0;
 }
 
 .telemetry-item:hover {
@@ -305,6 +324,18 @@ body {
   animation: pulse-dot 1.8s infinite ease-in-out;
 }
 
+.status-dot-pulse.amber {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+.status-dot-pulse.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
 .telemetry-item.db-status {
   background: var(--accent-emerald-subtle);
   border-color: rgba(16, 185, 129, 0.35);
@@ -317,7 +348,7 @@ body {
 }
 
 .telemetry-label {
-  font-size: 0.60rem;
+  font-size: 0.58rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-tertiary);
@@ -325,13 +356,14 @@ body {
 }
 
 .telemetry-value {
-  font-size: 0.90rem;
+  font-size: 0.85rem;
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
 }
 
 .text-danger {
@@ -370,7 +402,7 @@ body {
 .hud-right-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -379,7 +411,7 @@ body {
   display: flex;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: 9px;
   padding: 3px;
   gap: 3px;
 }
@@ -388,15 +420,16 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 5px 10px;
+  border-radius: 7px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.18s ease;
+  white-space: nowrap;
 }
 
 .view-mode-btn:hover {
@@ -412,41 +445,88 @@ body {
   font-weight: 700;
 }
 
-/* Basemap Switcher Buttons */
-.basemap-switcher {
-  display: flex;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 2px;
+/* Consolidated Basemap Dropdown (Issue 13 fix) */
+.basemap-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
 }
 
-.basemap-btn {
+.basemap-dropdown-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.basemap-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-medium);
+}
+
+.dropdown-chevron {
+  transition: transform 0.2s ease;
+}
+
+.basemap-dropdown-wrapper.open .dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.basemap-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 170px;
+  background: var(--bg-surface-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 5px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--shadow-floating);
+  z-index: 100;
+}
+
+.basemap-dropdown-wrapper.open .basemap-dropdown-menu {
+  display: flex;
+}
+
+.basemap-dropdown-item {
   background: transparent;
   border: none;
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 5px 9px;
-  border-radius: 7px;
+  padding: 7px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  display: inline-flex;
+  text-align: left;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.18s ease;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
-.basemap-btn:hover {
-  color: var(--text-primary);
+.basemap-dropdown-item:hover {
   background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
 }
 
-.basemap-btn.active {
-  background: rgba(56, 189, 248, 0.2);
-  color: var(--text-primary);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+.basemap-dropdown-item.active {
+  background: var(--accent-blue-subtle);
+  color: var(--accent-cyan);
   font-weight: 700;
 }
 
@@ -1971,9 +2051,9 @@ input:checked + .slider-knob:before {
     padding: 3px 6px;
   }
 
-  .basemap-btn {
+  .basemap-dropdown-btn {
     font-size: 0.64rem;
-    padding: 3px 5px;
+    padding: 3px 6px;
   }
 
   /* Sidebar: narrower, starts below HUD */
@@ -2115,7 +2195,7 @@ input:checked + .slider-knob:before {
   /* Hide telemetry strip, view/basemap switchers from HUD on mobile */
   .telemetry-strip,
   .view-mode-switcher,
-  .basemap-switcher {
+  .basemap-dropdown-wrapper {
     display: none;
   }
 

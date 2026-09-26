@@ -201,10 +201,10 @@ class ChakraNetController {
           paint: { 'raster-opacity': 0.98, 'raster-fade-duration': 250 }
         }]
       },
-      center: [85.8, 18.8],
-      zoom: 6.6,
-      pitch: 56,
-      bearing: -14,
+      center: [86.2, 17.5],
+      zoom: 6.4,
+      pitch: 54,
+      bearing: -12,
     });
 
     this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
@@ -213,9 +213,22 @@ class ChakraNetController {
       if (this.map.setLight) {
         this.map.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.45, position: [1.5, 180, 45] });
       }
-      this._addAllChakraNetLayers();
+      this._addAllChakraNetLayers().then(() => {
+        // Issue 15 fix: Fit camera bounds so cyclone track & hazard grid dominate the screen
+        this.fitBoundsToEvent(false);
+      });
       this.bindInteractions();
       this.createStormEyeMarker();
+    });
+
+    // Close basemap dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('basemap-dropdown-container');
+      if (container && container.classList.contains('open') && !container.contains(e.target)) {
+        container.classList.remove('open');
+        const btn = document.getElementById('btn-basemap-dropdown');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     // Issue 2 fix: re-inject all custom layers after ANY style swap (basemap switch).
@@ -232,6 +245,39 @@ class ChakraNetController {
   }
 
   // -------------------------------------------------------------------------
+  // Issue 15 fix: camera bounds calculation ensuring storm dominates viewport
+  // -------------------------------------------------------------------------
+
+  fitBoundsToEvent(smooth = false) {
+    if (!this.map) return;
+    const isDesktop = window.innerWidth > 1024;
+    const leftPad = isDesktop && this.isSidebarOpen ? 370 : 40;
+
+    // Geographic bounds enclosing Bay of Bengal track, Andaman genesis, and coastal Odisha
+    const bounds = [
+      [82.6, 10.2], // SW coordinates [lon, lat]
+      [93.8, 21.6]  // NE coordinates [lon, lat]
+    ];
+
+    const cameraOptions = {
+      padding: { top: 85, bottom: 120, left: leftPad, right: 60 },
+      maxZoom: 7.2,
+      duration: smooth ? 1600 : 0,
+      essential: true
+    };
+
+    if (this.currentViewMode === '4d') {
+      cameraOptions.pitch = 54;
+      cameraOptions.bearing = -12;
+    } else {
+      cameraOptions.pitch = 0;
+      cameraOptions.bearing = 0;
+    }
+
+    this.map.fitBounds(bounds, cameraOptions);
+  }
+
+  // -------------------------------------------------------------------------
   // Issue 2 fix: named function wrapping ALL custom layer/source setup
   // -------------------------------------------------------------------------
 
@@ -242,12 +288,46 @@ class ChakraNetController {
   }
 
   // -------------------------------------------------------------------------
-  // Basemap switching
+  // Basemap switching & Dropdown Handling (Issue 13 fix)
   // -------------------------------------------------------------------------
+
+  toggleBasemapDropdown(e) {
+    if (e) e.stopPropagation();
+    const container = document.getElementById('basemap-dropdown-container');
+    if (container) {
+      const isOpen = container.classList.toggle('open');
+      const btn = document.getElementById('btn-basemap-dropdown');
+      if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  }
+
+  selectBasemap(styleKey, labelText, e) {
+    if (e) e.stopPropagation();
+    this.setBasemap(styleKey);
+    const labelEl = document.getElementById('label-current-basemap');
+    if (labelEl && labelText) labelEl.textContent = labelText;
+    const container = document.getElementById('basemap-dropdown-container');
+    if (container) container.classList.remove('open');
+    const btn = document.getElementById('btn-basemap-dropdown');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
 
   setBasemap(styleKey) {
     if (this.currentBasemap === styleKey) return;
     this.currentBasemap = styleKey;
+
+    const basemapLabels = {
+      'dark-tactical': '🌑 Dark',
+      'google-satellite': '🛰️ Sat',
+      'google-terrain': '🌊 Ocean',
+      'light-clean': '☀️ Light',
+      'osm': '🗺️ OSM'
+    };
+
+    const labelEl = document.getElementById('label-current-basemap');
+    if (labelEl && basemapLabels[styleKey]) {
+      labelEl.textContent = basemapLabels[styleKey];
+    }
 
     ['dark', 'satellite', 'terrain', 'light', 'osm'].forEach(k => {
       const btn = document.getElementById(`btn-bm-${k}`);
@@ -335,13 +415,20 @@ class ChakraNetController {
         paint: { 'fill-color': '#4f46e5', 'fill-opacity': 0.08 } });
       this.map.addLayer({ id: 'layer-districts-line', type: 'line', source: 'districts-source',
         paint: { 'line-color': '#6366f1', 'line-width': 1.6, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } });
+      
+      // Issue 16 fix: High contrast text-halo ensures district & state names remain legible across bounding lines
       this.map.addLayer({ id: 'layer-districts-labels', type: 'symbol', source: 'districts-source',
         layout: {
           'text-field': ['coalesce', ['get', 'district'], ['get', 'name']],
           'text-font': ['Open Sans Regular'], 'text-size': 11.5,
           'text-offset': [0, 0.5], 'text-anchor': 'center', 'text-allow-overlap': false,
         },
-        paint: { 'text-color': '#f8fafc', 'text-halo-color': '#070b14', 'text-halo-width': 2.5 }
+        paint: {
+          'text-color': '#f8fafc',
+          'text-halo-color': '#070b14',
+          'text-halo-width': 3.5,
+          'text-halo-blur': 0.5
+        }
       });
     } catch (err) {
       console.error('Failed to load district boundaries:', err);
@@ -790,12 +877,7 @@ class ChakraNetController {
   }
 
   resetOverview() {
-    this.map.flyTo({
-      center: [85.8, 18.8], zoom: 6.2,
-      pitch: this.currentViewMode === '4d' ? 50 : 0,
-      bearing: this.currentViewMode === '4d' ? -10 : 0,
-      duration: 1600, essential: true,
-    });
+    this.fitBoundsToEvent(true);
   }
 
   // -------------------------------------------------------------------------
